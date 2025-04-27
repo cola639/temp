@@ -1,0 +1,6 @@
+I have made a Word document about useful plugins for IntelliJ IDEA and VSCode
+I’ll quickly share my screen to show how to install them. 
+I believe these plugins will be quite helpful for our development.
+After the meeting, I’ll check with Chris on how to upload them to the group development folder
+
+On the weekdays this week, I will spend my time learning the code and setting up the remaining environment configurations
