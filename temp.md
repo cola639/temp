@@ -1,3 +1,80 @@
+好的！你在图片里的 SQL 查询是：
+
+```sql
+SELECT * 
+FROM dbo.RemediationDetail 
+WHERE month = 202505 
+  AND week = 2 
+  AND applicationId IN (
+    SELECT applicationId 
+    FROM dbo.ItsoAppService 
+    WHERE staffId = ?
+  );
+```
+
+------
+
+### ✅ 对应的 Spring Data JPA 查询
+
+你需要在 AppInstanceRepository 接口中写一个自定义查询方法，用 @Query 注解。
+
+------
+
+### 示例代码
+
+```java
+@Repository
+public interface AppInstanceRepository extends JpaRepository<AppInstance, Long> {
+
+    @Query("SELECT a FROM AppInstance a " +
+           "WHERE a.month = :month " +
+           "AND a.week = :week " +
+           "AND a.appInstID IN (" +
+           "   SELECT i.applicationId FROM ItsoAppService i WHERE i.staffId = :staffId" +
+           ")")
+    List<AppInstance> findByMonthWeekAndStaff(@Param("month") Integer month,
+                                              @Param("week") Integer week,
+                                              @Param("staffId") Long staffId);
+}
+```
+
+------
+
+### ⚠ 注意事项
+
+✅ 上面的 `ItsoAppService` 需要有对应的实体类（JPA 里不能直接用表名，必须是实体名）。
+ ✅ 确保 `appInstID` 在 AppInstance 类里对应的是 `applicationId`。
+ ✅ 确保字段命名（`month`, `week`, `staffId`）和实体类字段一致，或用 @Column 指定。
+
+------
+
+### ✅ 如果你需要原生 SQL（因为涉及复杂表）
+
+可以写：
+
+```java
+@Repository
+public interface AppInstanceRepository extends JpaRepository<AppInstance, Long> {
+
+    @Query(value = "SELECT * FROM RemediationDetail " +
+                   "WHERE month = :month " +
+                   "AND week = :week " +
+                   "AND applicationId IN (" +
+                   "   SELECT applicationId FROM ItsoAppService WHERE staffId = :staffId" +
+                   ")", nativeQuery = true)
+    List<AppInstance> findByMonthWeekAndStaff(@Param("month") Integer month,
+                                              @Param("week") Integer week,
+                                              @Param("staffId") Long staffId);
+}
+```
+
+✅ 这里用 nativeQuery = true，允许你直接写数据库 SQL。
+
+------
+
+如果你还需要帮忙生成 ItsoAppService 实体或者写 Service、Controller 层的调用代码，直接跟我说，我可以帮你全套生成好！需要吗？
+
+
 好的！我来帮你生成对应的 **Service 层** 和 **Controller 层**，配合你这个 AppInstanceRepository 接口。
 
 ------
