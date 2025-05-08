@@ -267,3 +267,122 @@ public interface AppInstanceRepository extends JpaRepository<AppInstance, Long> 
 SELECT * 
 FROM RemediationDetail
 WHERE dueDate BETWEEN DATEADD(DAY, -15, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE);
+
+
+
+
+
+好问题！你在 Microsoft SQL Server 上运行：
+
+```sql
+SELECT * 
+FROM RemediationDetail
+WHERE dueDate BETWEEN DATEADD(DAY, -15, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE);
+```
+
+查询出 6000 条数据，耗时超过 10 秒，确实太慢了。
+ 我给你分析 **常见优化点** 和 **针对性建议**。
+
+------
+
+### ✅ 优化方向 1：加索引
+
+最重要也是最常见的优化：
+
+👉 **确认 `dueDate` 字段上是否有索引**。
+ 因为你在 WHERE 子句里用 `dueDate` 做范围筛选，如果 `dueDate` 没有索引，SQL Server 每次都要全表扫描。
+
+#### SQL 检查当前索引：
+
+```sql
+EXEC sp_helpindex 'RemediationDetail';
+```
+
+#### 如果没有索引，可以加：
+
+```sql
+CREATE INDEX idx_dueDate ON RemediationDetail(dueDate);
+```
+
+⚠ 注意：
+
+- 如果表非常大（几十万、百万行以上），加索引会明显提速。
+- 如果还有 `applicationId`、`staffId` 这种组合查询，可以考虑联合索引。
+
+------
+
+### ✅ 优化方向 2: 只查需要的列
+
+你现在用的是：
+
+```sql
+SELECT *
+```
+
+它会查出表里的所有列（包括可能很大的文本、JSON、BLOB 列）。
+ 建议改成：
+
+```sql
+SELECT recordId, dueDate, applicationName, ... 
+FROM RemediationDetail
+WHERE dueDate BETWEEN DATEADD(DAY, -15, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE);
+```
+
+只查你实际要用到的列，可以减少：
+ ✅ 网络传输
+ ✅ 内存加载
+ ✅ IO 压力
+
+------
+
+### ✅ 优化方向 3: 加分页
+
+如果你只是要展示部分数据（如前端分页用），强烈建议加分页：
+
+```sql
+SELECT recordId, dueDate, applicationName, ...
+FROM RemediationDetail
+WHERE dueDate BETWEEN DATEADD(DAY, -15, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE)
+ORDER BY dueDate DESC
+OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY;
+```
+
+这样一次只取 100 条，大大减轻压力。
+
+------
+
+### ✅ 优化方向 4: 检查表统计信息和重建索引
+
+如果你的表本身已经很大，过去有频繁写入或更新：
+
+- 更新统计信息：
+
+```sql
+UPDATE STATISTICS RemediationDetail;
+```
+
+- 重建索引：
+
+```sql
+ALTER INDEX ALL ON RemediationDetail REBUILD;
+```
+
+这些可以帮助 SQL Server 优化执行计划。
+
+------
+
+### 🧠 总结优化建议
+
+| 优化点                       | 是否推荐               |
+| ---------------------------- | ---------------------- |
+| 给 `dueDate` 加单列索引      | ✅ 强烈推荐             |
+| 改 `SELECT *` 为具体列       | ✅ 强烈推荐             |
+| 加分页 LIMIT（OFFSET FETCH） | ✅ 推荐（如果前端分页） |
+| 更新统计信息/重建索引        | ✅ 推荐（表大时）       |
+
+------
+
+如果你愿意，可以把：
+ ✅ 表结构（字段、主键、现有索引）
+ ✅ 实际要展示的列
+ 贴给我，我帮你写更精准的优化 SQL！需要吗？直接贴上来吧。
