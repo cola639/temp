@@ -261,3 +261,9 @@ public interface AppInstanceRepository extends JpaRepository<AppInstance, Long> 
  ✅ 错误处理和统一响应结构
 
 直接说，我可以帮你全套写好！要吗？
+
+
+
+SELECT * 
+FROM RemediationDetail
+WHERE dueDate BETWEEN DATEADD(DAY, -15, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE);
