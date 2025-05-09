@@ -386,3 +386,103 @@ ALTER INDEX ALL ON RemediationDetail REBUILD;
  ✅ 表结构（字段、主键、现有索引）
  ✅ 实际要展示的列
  贴给我，我帮你写更精准的优化 SQL！需要吗？直接贴上来吧。
+
+
+
+好的！我来帮你写好完整的：
+
+✅ Repository
+ ✅ Service
+ ✅ Controller
+
+查询：
+
+- 根据 `applicationName`（模糊匹配或完全匹配）
+- `dueDate` 在 **今天到未来 15 天内**
+- `overdue` 字段满足条件（这里我假设你要用 `overdue > 0`，如果有具体值可以改）
+
+------
+
+### ✅ Repository
+
+```java
+@Repository
+public interface AppInstanceRepository extends JpaRepository<AppInstance, Long> {
+
+    @Query(value = "SELECT * FROM RemediationDetail " +
+                   "WHERE applicationName = :appName " +
+                   "AND dueDate BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(DAY, 15, CAST(GETDATE() AS DATE)) " +
+                   "AND overdue > 0",
+           nativeQuery = true)
+    List<AppInstance> findUpcomingByApplicationName(@Param("appName") String appName);
+}
+```
+
+------
+
+### ✅ Service
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class AppInstanceService {
+
+    @Autowired
+    private AppInstanceRepository appInstanceRepository;
+
+    public List<AppInstance> getUpcomingByApplicationName(String appName) {
+        return appInstanceRepository.findUpcomingByApplicationName(appName);
+    }
+}
+```
+
+------
+
+### ✅ Controller
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/app-instances")
+public class AppInstanceController {
+
+    @Autowired
+    private AppInstanceService appInstanceService;
+
+    @GetMapping("/upcoming")
+    public List<AppInstance> getUpcomingByApplicationName(@RequestParam String appName) {
+        return appInstanceService.getUpcomingByApplicationName(appName);
+    }
+}
+```
+
+请求示例：
+
+```
+GET /api/app-instances/upcoming?appName=MyApp
+```
+
+------
+
+### ✅ 注意
+
+- 如果 `applicationName` 需要模糊匹配（like %xxx%），需要把 Repository 改为：
+
+```sql
+WHERE applicationName LIKE %:appName%
+```
+
+- 如果 overdue 不用大于 0，而是用其他条件，可以直接修改 SQL。
+- 如果未来需要分页（如前端表格加载），我也可以帮你加 `Pageable` 版本。
+
+------
+
+要我帮你写分页版、DTO 版或者多条件查询版吗？直接说！我帮你扩展好。
