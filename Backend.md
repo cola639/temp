@@ -241,3 +241,54 @@ List<Object[]> getAppInstanceStats(@Param("staffId") Long staffId);
  ✅ 我帮你写成外部 SQL 文件加载（更易维护）
  ✅ 或者帮你写成 MyBatis/QueryDSL 版本
  直接说！我可以一次帮你转好。要吗？
+
+
+
+WITH latestReport AS (
+    SELECT TOP 1 month, week
+    FROM dbo.RemediationDetail1
+    ORDER BY month DESC, week DESC
+),
+userApplications AS (
+    SELECT DISTINCT applicationId, applicationName, itServiceId, itService
+    FROM dbo.ItsoAppServiceHost
+    WHERE itsoStaffId = 45443352 OR itsoDelegateStaffId = 45443352
+),
+violations AS (
+    SELECT 
+        detail.applicationId,
+        detail.itServiceId,
+        CASE WHEN detail.dueDate > GETDATE() THEN 1 ELSE 0 END AS violation_flag,
+        detail.overdue,
+        CASE 
+            WHEN (detail.exceptions IS NOT NULL AND detail.exceptions = 'Exception')
+              OR (detail.comments IS NOT NULL AND detail.comments = 'Third party vendor dependency')
+            THEN 1 ELSE 0
+        END AS exception_flag
+    FROM dbo.RemediationDetail detail
+    CROSS JOIN latestReport
+    WHERE detail.month = latestReport.month
+      AND detail.week = latestReport.week
+      AND detail.applicationId IN (
+          SELECT applicationId FROM userApplications
+      )
+),
+stat AS (
+    SELECT 
+        applicationId,
+        itServiceId,
+        SUM(violation_flag) AS violations,
+        SUM(overdue) AS total_overdue,
+        SUM(exception_flag) AS exceptions
+    FROM violations
+    GROUP BY applicationId, itServiceId
+)
+SELECT 
+    u.applicationName,
+    u.itService,
+    s.violations,
+    s.total_overdue,
+    s.exceptions
+FROM stat s
+JOIN userApplications u
+  ON s.applicationId = u.applicationId AND s.itServiceId = u.itServiceId;
