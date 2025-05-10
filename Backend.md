@@ -160,3 +160,84 @@ public class AppInstanceController {
 
 ------
 
+
+
+很好！你遇到的问题是：
+
+在 JDK 8 里，
+
+> 三引号 """ 多行字符串（text block） 不支持。
+
+这个功能是 Java 15+ 才引入的。
+
+------
+
+### ✅ 改法：用传统字符串拼接
+
+你需要把：
+
+```java
+@Query(value = """
+    SELECT ...
+""", nativeQuery = true)
+```
+
+改成：
+
+```java
+@Query(value =
+    "WITH latestReport AS ( " +
+    "   SELECT TOP 1 month, week " +
+    "   FROM dbo.RemediationDetail1 " +
+    "   ORDER BY month DESC, week DESC " +
+    "), " +
+    "userApplications AS ( " +
+    "   SELECT DISTINCT applicationId, applicationName, itServiceId, itService " +
+    "   FROM dbo.ItsoAppServiceHost " +
+    "   WHERE itsoStaffId = :staffId OR itsoDelegateStaffId = :staffId " +
+    "), " +
+    "violations AS ( " +
+    "   SELECT detail.applicationId, detail.itServiceId, " +
+    "          CASE WHEN detail.dueDate > GETDATE() THEN 1 ELSE 0 END AS violation_flag, " +
+    "          detail.overdue, " +
+    "          CASE WHEN (detail.exceptions IS NOT NULL AND detail.exceptions = 'Exception') " +
+    "                    OR (detail.comments IS NOT NULL AND detail.comments = 'Third party vendor dependency') " +
+    "               THEN 1 ELSE 0 " +
+    "          END AS exception_flag " +
+    "   FROM dbo.RemediationDetail detail " +
+    "   CROSS JOIN latestReport " +
+    "   WHERE detail.month = latestReport.month " +
+    "     AND detail.week = latestReport.week " +
+    "     AND detail.applicationId IN (SELECT applicationId FROM userApplications) " +
+    "), " +
+    "stat AS ( " +
+    "   SELECT applicationId, itServiceId, " +
+    "          SUM(violation_flag) AS violations, " +
+    "          SUM(overdue) AS total_overdue, " +
+    "          SUM(exception_flag) AS exceptions " +
+    "   FROM violations " +
+    "   GROUP BY applicationId, itServiceId " +
+    ") " +
+    "SELECT u.applicationName, u.itService, s.violations, s.total_overdue, s.exceptions " +
+    "FROM stat s " +
+    "JOIN userApplications u ON s.applicationId = u.applicationId AND s.itServiceId = u.itServiceId ",
+    nativeQuery = true)
+List<Object[]> getAppInstanceStats(@Param("staffId") Long staffId);
+```
+
+------
+
+### ✅ 小总结
+
+| 问题                        | 解决方案                                     |
+| --------------------------- | -------------------------------------------- |
+| JDK 8 不支持 """ 多行字符串 | 改成传统双引号 + 拼接字符串写法              |
+| 多行拼接易出错              | 建议用 IDE 格式化好、对齐好，方便维护        |
+| 仍要保证 SQL 可读性         | 可以在代码中用空格、换行符明确拼接，防止连死 |
+
+------
+
+如果你需要：
+ ✅ 我帮你写成外部 SQL 文件加载（更易维护）
+ ✅ 或者帮你写成 MyBatis/QueryDSL 版本
+ 直接说！我可以一次帮你转好。要吗？
