@@ -395,3 +395,23 @@ INNER JOIN appNameSerName
     ON stat.applicationId = appNameSerName.applicationId 
     AND stat.itServiceId = appNameSerName.itServiceId;
 
+
+SELECT detail.applicationId,
+       detail.itServiceId,
+       1 AS violations,
+       IIF(dueDate > GETDATE(), 1, 0) AS overdue,
+       IIF((exceptions IS NOT NULL AND exceptions = 'Exception') 
+           OR (comments IS NOT NULL AND comments = 'Third party vendor dependency'), 1, 0) AS exception
+FROM dbo.RemediationDetail detail
+INNER JOIN (
+    SELECT TOP 1 month, week
+    FROM dbo.RemediationDetail
+    ORDER BY month DESC, week DESC
+) AS lastestReport
+    ON detail.month = lastestReport.month AND detail.week = lastestReport.week
+WHERE detail.applicationId IN (
+    SELECT CAST(applicationId AS BIGINT)
+    FROM dbo.ItsoAppServiceHost
+    WHERE itsoStaffId = 43737163 OR itsoDelegateStaffId = 43737163
+);
+
