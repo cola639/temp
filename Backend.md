@@ -99,9 +99,154 @@ public class AppInstanceController {
 
 —
 
-如果你需要：
- ✅ 帮你写好对应的 DTO 封装
- ✅ 改成分页查询
- ✅ 用 @SqlResultSetMapping 自动映射结果
+好的！下面我将按照 **Spring Boot 三层架构最佳实践**，为你重写这个功能：
 
-直接跟我说，我帮你写全套！要吗？
+> 按 `appId` 查询所有数据，然后按 `appName` 分组，最终返回结构化 JSON。
+
+---
+
+## 🧱 假设数据库表结构如下（`table_name`）：
+
+| id | appId | appName     | user  | access\_time     |
+| -- | ----- | ----------- | ----- | ---------------- |
+| 1  | xxx   | ChatGPT     | alice | 2024-01-01 10:00 |
+| 2  | xxx   | ChatGPT     | bob   | 2024-01-01 11:00 |
+| 3  | xxx   | ChatGPT PRO | alice | 2024-01-02 09:00 |
+
+---
+
+## ✅ 一、DTO 类定义
+
+```java
+// App 信息
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class AppInfoDTO {
+    private String appId;
+    private String appName;
+}
+
+// 用户访问明细
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserInfoDTO {
+    private Long id;
+    private String user;
+    private LocalDateTime accessTime;
+}
+
+// 分组结构
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class AppGroupDTO {
+    private AppInfoDTO appInfo;
+    private List<UserInfoDTO> userInfo;
+}
+```
+
+---
+
+## ✅ 二、Repository 层
+
+```java
+@Repository
+public interface AppAccessRepository extends JpaRepository<AppAccessEntity, Long> {
+    List<AppAccessEntity> findByAppId(String appId);
+}
+```
+
+假设你已有一个实体类 `AppAccessEntity` 对应表 `table_name`。
+
+---
+
+## ✅ 三、Service 层
+
+```java
+@Service
+public class AppAccessService {
+
+    @Autowired
+    private AppAccessRepository repository;
+
+    public List<AppGroupDTO> getGroupedData(String appId) {
+        List<AppAccessEntity> rawData = repository.findByAppId(appId);
+
+        // 按 appId + appName 分组
+        return rawData.stream()
+            .collect(Collectors.groupingBy(
+                e -> new AppInfoDTO(e.getAppId(), e.getAppName()),
+                LinkedHashMap::new,
+                Collectors.mapping(
+                    e -> new UserInfoDTO(e.getId(), e.getUser(), e.getAccessTime()),
+                    Collectors.toList()
+                )
+            ))
+            .entrySet().stream()
+            .map(entry -> new AppGroupDTO(entry.getKey(), entry.getValue()))
+            .collect(Collectors.toList());
+    }
+}
+```
+
+---
+
+## ✅ 四、Controller 层
+
+```java
+@RestController
+@RequestMapping("/apps")
+public class AppAccessController {
+
+    @Autowired
+    private AppAccessService appAccessService;
+
+    @GetMapping("/grouped")
+    public List<AppGroupDTO> getGroupedData(@RequestParam String appId) {
+        return appAccessService.getGroupedData(appId);
+    }
+}
+```
+
+---
+
+## ✅ 五、最终前端得到的 JSON 示例：
+
+```json
+[
+  {
+    "appInfo": {
+      "appId": "xxx",
+      "appName": "ChatGPT"
+    },
+    "userInfo": [
+      { "id": 1, "user": "alice", "accessTime": "2024-01-01T10:00:00" },
+      { "id": 2, "user": "bob", "accessTime": "2024-01-01T11:00:00" }
+    ]
+  },
+  {
+    "appInfo": {
+      "appId": "xxx",
+      "appName": "ChatGPT PRO"
+    },
+    "userInfo": [
+      { "id": 3, "user": "alice", "accessTime": "2024-01-02T09:00:00" }
+    ]
+  }
+]
+```
+
+---
+
+## ✅ 小结
+
+| 层级           | 职责           |
+| ------------ | ------------ |
+| `Controller` | 负责接收请求，调用服务层 |
+| `Service`    | 封装聚合、分组逻辑    |
+| `Repository` | 提供原始数据查询方法   |
+
+---
+
