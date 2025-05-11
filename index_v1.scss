@@ -1,0 +1,41 @@
+.w1500 {
+  width: 1500px;
+}
+
+.ant-table-tbody {
+  > tr.custom-row {
+    > td {
+      background-color: #fff;
+      border-bottom: none !important;
+      padding-bottom: 20px;
+      transition: background 0.3s;
+    }
+
+    &:last-of-type {
+      > td {
+        border-bottom: 1px solid #e0e0e0 !important;
+      }
+    }
+
+    &:not(:last-of-type) {
+      > td {
+        border-bottom: 6px solid #f0f2f5;
+      }
+    }
+  }
+}
+
+// .ant-table-tbody > tr.custom-row > td {
+//   background-color: #fff;
+//   border-bottom: none !important;
+//   padding-bottom: 12px;
+//   transition: background 0.3s;
+// }
+
+// .ant-table-tbody > tr.custom-row:last-of-type > td {
+//   border-bottom: 1px solid #e0e0e0 !important;
+// }
+
+// .ant-table-tbody > tr.custom-row:not(:last-of-type) > td {
+//   border-bottom: 6px solid #f0f2f5; /* 空白效果 */
+// }
