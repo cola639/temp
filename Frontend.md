@@ -67,9 +67,53 @@ AdminManagement.loader = async () => {
 
 ------
 
-如果你想，我还能帮你加：
- ✅ React Query 整合版
- ✅ 配合 Ant Design Table 的分页/筛选重拉版
- ✅ 或者 loading skeleton 动画版本
+好的！如果你想让 Ant Design 的 Table 固定为绝对像素宽度，而不是自动缩放，可以这样做：
 
-直接说，我帮你写好！
+1️⃣ 设置表格的固定宽度：
+
+```jsx
+<Table
+  style={{ width: '1200px' }} // 固定总宽度
+  scroll={{ x: 1200 }}        // 横向滚动固定在 1200px
+  columns={columns}
+  dataSource={dataSource}
+/>
+```
+
+2️⃣ 每一列设置具体 `width`，确保列宽度和总宽度一致：
+
+```js
+const columns = [
+  {
+    title: 'Host',
+    dataIndex: 'host',
+    width: 300,
+  },
+  {
+    title: 'Tier',
+    dataIndex: 'tier',
+    width: 300,
+  },
+  {
+    title: 'Service',
+    dataIndex: 'service',
+    width: 600,
+  },
+];
+```
+
+3️⃣ 确保 CSS 不影响表格缩放：
+
+```css
+.ant-table {
+  table-layout: fixed; /* 固定布局，按px宽度分配 */
+}
+```
+
+总结：
+
+- scroll.x + style.width → 固定表格区域
+- columns[].width → 固定列宽
+- table-layout: fixed → 避免列宽被内容撑开
+
+如果你想，我可以帮你写出完整代码片段！要吗？
