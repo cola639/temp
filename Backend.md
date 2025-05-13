@@ -1,3 +1,14 @@
+你这个 `@Query(value = """ ... """, nativeQuery = true)` 是 **Java 15+ 的文本块写法（Text Block）**，Java 8 不支持 `"""`。
+
+---
+
+### ✅ Java 8 需要改成传统的 **字符串拼接写法**（用 `+` 拼接多行）
+
+---
+
+### 🔁 修改建议如下：将 `"""` 换成 `"..." +` 一行一行拼接
+
+```java
 @Query(value = 
     "WITH lastestReport AS ( " +
     "    SELECT TOP 1 month, week " +
@@ -55,3 +66,17 @@
     "    ON s.applicationId = u.applicationId AND s.itServiceId = u.itServiceId",
     nativeQuery = true)
 List<AppInstanceDTO> getAppInstancesByStaffId(@Param("staffId") String staffId);
+```
+
+---
+
+### ✅ 补充建议：
+
+* 多行字符串拼接建议 **每行加空格结尾**，否则容易拼出错误语句（SQL 拼到一起了）
+* 每段后面的 `+` 不要漏，否则编译器会报错
+* 可以用 IDE 格式化对齐，方便阅读
+
+---
+
+这样改完之后，在 Java 8 环境中就可以顺利运行 ✅
+如果你还有分页、条件筛选想一起处理，我也可以继续帮你加进去。需要吗？
