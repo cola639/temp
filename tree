@@ -1,0 +1,50 @@
+当然，下面是一个完整的 HTML 示例，展示了一个 `div`，它右边紧跟着一条**垂直线**，你可以直接复制粘贴到本地 `.html` 文件中查看效果。
+
+---
+
+### ✅ 目标效果：右侧垂直线紧跟元素
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>垂直线示例</title>
+  <style>
+    .your-class-name {
+      position: relative;
+      padding-right: 16px; /* 给右边留空间避免文字贴住线 */
+      display: inline-block;
+      font-family: sans-serif;
+      font-size: 16px;
+    }
+
+    .your-class-name::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 1px;
+      height: 100%;
+      background-color: #1890ff; /* 你可以换成任何颜色 */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="your-class-name">我是一个节点</div>
+
+</body>
+</html>
+```
+
+---
+
+### 想扩展成以下形式也可以：
+
+#### 1. 多个节点组成树状结构  
+#### 2. 垂直线不满高，只垂下来一点点  
+#### 3. 同时加上左边横线连过去
+
+告诉我你更具体的视觉结构，我可以为你出对应的完整布局。
