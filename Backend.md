@@ -175,9 +175,11 @@ public Map<Long, List<HostListDTO>> getGroupedHosts(@RequestParam List<Long> app
             (exceptions IS NOT NULL AND exceptions = 'Exception') OR 
             (comments IS NOT NULL AND comments = 'Third party vendor dependency'),
             1, 0
-        ) AS exception
+        ) AS exception,
+        IIF(dueDate < GETDATE(), 1, 0) AS overdue  -- ✅ 新增字段
     FROM dbo.RemediationDetail1
     WHERE applicationId = :applicationId
     """, nativeQuery = true)
 List<HostRecordProjection> findHostRecordsByAppId(@Param("applicationId") Long applicationId);
+
 
