@@ -1,43 +1,159 @@
-根据你图片中的字段要求，我为你写好了一份标准的建表 SQL，表名为 `ViolationRemediationPlan`，字段包含日期、状态、文本等，**不包含 DROP 语句，安全可直接执行。**
+非常棒，你的目标是：
+
+> **根据 SQL 查询结果，按 `applicationId` 分组分类，并封装为 `HostListDTO` 实体结构，返回给前端。**
+
+我给你一个完整的流程实现，**包括 SQL 查询、DTO 映射、Java 分组转换。**
 
 ---
 
-## ✅ 建表 SQL（SQL Server 语法）
+## ✅ 1. 你的 `HostListDTO` 已经准备好
 
-```sql
-CREATE TABLE ViolationRemediationPlan (
-    planId BIGINT PRIMARY KEY,              -- 主键
-    hostname VARCHAR(255) NOT NULL,         -- 主机名
-    checkId VARCHAR(100) NOT NULL,          -- 检查项ID
-    checkName VARCHAR(255) NOT NULL,        -- 检查项名称
-    remediationStatus VARCHAR(50) NOT NULL, -- 修复状态（如 Pending、Approved）
-    remediationDate DATETIME NULL,          -- 修复完成时间
-    contactUpdator VARCHAR(255) NULL,       -- 联系人/更新人
-    updatedDate DATETIME NULL               -- 最后更新时间
-);
+字段齐全，比如：
+
+```java
+public class HostListDTO {
+    private String hostName;
+    private String tierCriticality;
+    private Boolean itacCritical;
+    private String environment;
+    private String network;
+    private String gbgf;
+    private String gbgfFunction;
+    private String gbgfSubFunction;
+    private Long violations;
+    private Long exception;
+}
 ```
 
 ---
 
-### ✅ 字段说明：
+## ✅ 2. SQL 查询：查询所有记录（带 applicationId）
 
-| 字段名                 | 类型             | 说明                            |
-| ------------------- | -------------- | ----------------------------- |
-| `planId`            | `BIGINT`       | 主键（建议唯一，不自增可由业务生成）            |
-| `hostname`          | `VARCHAR(255)` | 主机名                           |
-| `checkId`           | `VARCHAR(100)` | 检查项 ID                        |
-| `checkName`         | `VARCHAR(255)` | 检查项名称                         |
-| `remediationStatus` | `VARCHAR(50)`  | 修复状态（如 `Pending`, `Approved`） |
-| `remediationDate`   | `DATETIME`     | 修复完成时间，可空                     |
-| `contactUpdator`    | `VARCHAR(255)` | 联系人（拼写已修正）                    |
-| `updatedDate`       | `DATETIME`     | 最后更新时间，可空                     |
+```sql
+SELECT 
+    applicationId,
+    hostName,
+    tierCriticality,
+    CAST(itacCritical AS INT) AS itacCritical,
+    environment,
+    network,
+    gbgf,
+    gbgfFunction,
+    gbgfSubFunction,
+    1 AS violations,
+    IIF(
+        (exceptions IS NOT NULL AND exceptions = 'Exception') 
+        OR (comments IS NOT NULL AND comments = 'Third party vendor dependency'), 
+        1, 0
+    ) AS exception
+FROM dbo.RemediationDetail1
+WHERE applicationId IN (:applicationIds) -- 可以是多个
+```
 
 ---
 
-### ✅ 你下一步可以考虑：
+## ✅ 3. Repository 中使用 DTO 投影接收结果（扁平结构）
 
-* 加索引（如 `checkId`, `hostname`）
-* 加约束（如 `remediationStatus` 使用枚举/代码表）
-* 后续配合 Spring JPA 实体生成代码
+```java
+public interface HostRecordProjection {
+    Long getApplicationId();
+    String getHostName();
+    String getTierCriticality();
+    Boolean getItacCritical();
+    String getEnvironment();
+    String getNetwork();
+    String getGbgf();
+    String getGbgfFunction();
+    String getGbgfSubFunction();
+    Long getViolations();
+    Long getException();
+}
+```
 
-需要我顺带帮你生成对应的 **JPA 实体类** 或 **insert 示例语句**吗？直接告诉我即可！
+```java
+@Query(value = "SELECT ...", nativeQuery = true)
+List<HostRecordProjection> findHostRecordsByAppIds(@Param("applicationIds") List<Long> applicationIds);
+```
+
+---
+
+## ✅ 4. Service 中按 `applicationId` 分组并转换为 `Map<Long, List<HostListDTO>>`
+
+```java
+public Map<Long, List<HostListDTO>> getHostListGroupedByAppId(List<Long> appIds) {
+    List<HostRecordProjection> raw = repository.findHostRecordsByAppIds(appIds);
+
+    return raw.stream()
+        .map(r -> {
+            HostListDTO dto = new HostListDTO();
+            dto.setHostName(r.getHostName());
+            dto.setTierCriticality(r.getTierCriticality());
+            dto.setItacCritical(r.getItacCritical());
+            dto.setEnvironment(r.getEnvironment());
+            dto.setNetwork(r.getNetwork());
+            dto.setGbgf(r.getGbgf());
+            dto.setGbgfFunction(r.getGbgfFunction());
+            dto.setGbgfSubFunction(r.getGbgfSubFunction());
+            dto.setViolations(r.getViolations());
+            dto.setException(r.getException());
+            return new AbstractMap.SimpleEntry<>(r.getApplicationId(), dto);
+        })
+        .collect(Collectors.groupingBy(
+            Map.Entry::getKey,
+            Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+        ));
+}
+```
+
+---
+
+## ✅ 5. Controller 调用示例
+
+```java
+@GetMapping("/host-list")
+public Map<Long, List<HostListDTO>> getGroupedHosts(@RequestParam List<Long> appIds) {
+    return service.getHostListGroupedByAppId(appIds);
+}
+```
+
+---
+
+## ✅ 最终返回结果示例（按 applicationId 分组）
+
+```json
+{
+  "10303024": [
+    {
+      "hostName": "host-a",
+      "tierCriticality": "High",
+      "itacCritical": true,
+      ...
+    },
+    {
+      "hostName": "host-b",
+      ...
+    }
+  ],
+  "10303025": [
+    {
+      "hostName": "host-c",
+      ...
+    }
+  ]
+}
+```
+
+---
+
+## ✅ 小结
+
+| 关键点    | 实现方式                         |
+| ------ | ---------------------------- |
+| 多字段查询  | 用 Projection                 |
+| 多记录分组  | Java `Collectors.groupingBy` |
+| 一行 DTO | 只用 `HostListDTO`             |
+| 可扩展结构  | 未来可加分页、条件、导出                 |
+
+---
+
+需要我根据你真实字段帮你把 SQL 拼好和 Repository 接口补全吗？还是你要我把这段组装成 JPA 可直接跑的完整代码？随时可以补。
