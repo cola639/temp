@@ -157,3 +157,27 @@ public Map<Long, List<HostListDTO>> getGroupedHosts(@RequestParam List<Long> app
 ---
 
 需要我根据你真实字段帮你把 SQL 拼好和 Repository 接口补全吗？还是你要我把这段组装成 JPA 可直接跑的完整代码？随时可以补。
+
+
+@Query(value = """
+    SELECT 
+        applicationId,
+        hostname AS hostName,
+        tierCriticality,
+        CAST(itacCritical AS INT) AS itacCritical,
+        environment,
+        network,
+        gbgf,
+        gbgfFunction,
+        gbgfSubFunction,
+        1 AS violations,
+        IIF(
+            (exceptions IS NOT NULL AND exceptions = 'Exception') OR 
+            (comments IS NOT NULL AND comments = 'Third party vendor dependency'),
+            1, 0
+        ) AS exception
+    FROM dbo.RemediationDetail1
+    WHERE applicationId = :applicationId
+    """, nativeQuery = true)
+List<HostRecordProjection> findHostRecordsByAppId(@Param("applicationId") Long applicationId);
+
