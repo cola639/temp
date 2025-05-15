@@ -1,23 +1,13 @@
-const groupedHostList = Object.values(
-  data.reduce((acc, item) => {
-    const host = item.hostName || "UNKNOWN";
+const uniqueHostMap = new Map();
 
-    if (!acc[host]) {
-      acc[host] = {
-        hostName: host,
-        violationList: [],
-        exceptionList: []
-      };
-    }
+data.forEach(item => {
+  if (!uniqueHostMap.has(item.hostName)) {
+    uniqueHostMap.set(item.hostName, item);
+  }
+});
 
-    if (item.violations === 1) {
-      acc[host].violationList.push(item);
-    }
+const uniqueHostArray = Array.from(uniqueHostMap.values());
 
-    if (item.exception === 1) {
-      acc[host].exceptionList.push(item);
-    }
+console.log(uniqueHostArray);
 
-    return acc;
-  }, {})
-);
+
