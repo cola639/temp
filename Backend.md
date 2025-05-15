@@ -229,5 +229,27 @@ List<HostRecordProjection> findHostRecordsByAppId(@Param("applicationId") Long a
     nativeQuery = true)
 List<HostRecordProjection> findHostRecordsByAppId(@Param("applicationId") Long applicationId);
 
+@Query(value =
+    "SELECT " +
+    "    hostname AS hostName, " +
+    "    tierCriticality, " +
+    "    CAST(itacCritical AS INT) AS itacCritical, " +
+    "    environment, " +
+    "    network, " +
+    "    gbgf, " +
+    "    gbgfFunction, " +
+    "    gbgfSubFunction, " +
+    "    1 AS violations, " +
+    "    IIF( " +
+    "        (exceptions IS NOT NULL AND exceptions = 'Exception') OR " +
+    "        (comments IS NOT NULL AND comments = 'Third party vendor dependency'), " +
+    "        1, 0 " +
+    "    ) AS exception, " +
+    "    IIF(dueDate < GETDATE(), 1, 0) AS overdue " +
+    "FROM dbo.RemediationDetail1 " +
+    "WHERE applicationId = :applicationId",
+    nativeQuery = true)
+List<HostListDTO> findHostRecordsByAppId(@Param("applicationId") Long applicationId);
+
 
 
