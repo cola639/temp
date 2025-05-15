@@ -403,6 +403,84 @@ public List<HostListDTO> getHostListWithStatus(Long applicationId) {
 
 是否需要我帮你把这个 status 表建表 SQL 或实体类也补上？或者希望做分页结构？随时告诉我。
 
+非常清晰，你的目标是：
+
+---
+
+## ✅ 目标说明：
+
+你有一个 `List<HostListDTO>`，每条都包含字段：
+
+* `dueDate`：判断是否逾期 → 放入 `violationList`
+* `exception` 值（0 或 1）→ 判断是否异常 → 放入 `exceptionList`
+
+然后你要将这两个列表分别放入 `HostListDTO` 对象中的：
+
+```java
+private List<HostDTO> violationList;
+private List<HostDTO> exceptionList;
+```
+
+---
+
+## ✅ 完整的 Service 实现补全如下：
+
+```java
+public List<HostListDTO> getHostList(@Param("applicationId") Long applicationId) {
+    // 原始数据
+    List<HostListDTO> hostList = appInstanceRepository.findHostRecordsByAppId(applicationId);
+
+    // 分别提取 violation 和 exception 条件的数据封装为 HostDTO
+    List<HostDTO> violationList = hostList.stream()
+        .filter(item -> item.getDueDate() != null && item.getDueDate().before(new Date()))  // ✅ 逾期逻辑
+        .map(item -> {
+            HostDTO dto = new HostDTO();
+            dto.setHostName(item.getHostName());
+            dto.setCheckId(item.getCheckId());
+            dto.setCheckName(item.getCheckName());
+            return dto;
+        })
+        .collect(Collectors.toList());
+
+    List<HostDTO> exceptionList = hostList.stream()
+        .filter(item -> item.getException() != null && item.getException() == 1) // ✅ 异常逻辑
+        .map(item -> {
+            HostDTO dto = new HostDTO();
+            dto.setHostName(item.getHostName());
+            dto.setCheckId(item.getCheckId());
+            dto.setCheckName(item.getCheckName());
+            return dto;
+        })
+        .collect(Collectors.toList());
+
+    // 将这两个 list 塞入 DTO 中（假设你只返回一个 HostListDTO）
+    // 如果你有多个 host 分组逻辑可按需要 map 回每条
+    HostListDTO result = new HostListDTO();
+    result.setViolationList(violationList);
+    result.setExceptionList(exceptionList);
+
+    return Collections.singletonList(result);  // 或返回 List<HostListDTO> 全部封装好
+}
+```
+
+---
+
+## ✅ 注意点：
+
+| 字段                                  | 逻辑                    |
+| ----------------------------------- | --------------------- |
+| `dueDate.before(new Date())`        | 判断是否逾期                |
+| `exception == 1`                    | 异常命中                  |
+| `map(...)` 转 `HostDTO`              | 只提取核心字段，避免数据冗余        |
+| `Collections.singletonList(result)` | 如果你只聚合出一个结果列表，可以直接返回它 |
+
+---
+
+## ✅ 可选优化：
+
+如果你每条 `HostListDTO` 都希望带自己的 `violationList` 和 `exceptionList`（比如按 hostName 分组），我们可以再写一层 `.groupingBy()` 分组后嵌套填入，有需要我也可以帮你改成分组版本。
+
+要不要我也顺带给你加一版“按 hostName 分组嵌套”的版本？适合前端页面展开结构展示。
 
 
 
