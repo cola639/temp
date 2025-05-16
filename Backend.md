@@ -1,17 +1,15 @@
-@Autowired
-private ViolationRemediationPlanRepository violationRepository;
+@Query("SELECT log FROM ActivityLog log " +
+       "WHERE log.auditLevel IN (1, 2) AND log.applicationId = :applicationId " +
+       "ORDER BY log.actionDate DESC")
+Page<ActivityLog> findApplicationLogs(@Param("applicationId") Long applicationId, Pageable pageable);
 
-@PostMapping("/saveViolationRemediationPlan")
-public ResponseEntity<ResponseBody> saveViolation(
-    @RequestBody ViolationRemediationPlan violationRemediationPlan
-) {
-    violationRepository.save(violationRemediationPlan);  // 直接保存
-    return ResponseBody.ok("Okay");
+
+@GetMapping("/getActiveLog")
+public ResponseEntity<ResponseBody> getActiveLog(@RequestParam Long applicationId,
+                                                 @RequestParam(defaultValue = "0") int page,
+                                                 @RequestParam(defaultValue = "10") int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<ActivityLog> activityLog = activityLogRepository.findApplicationLogs(applicationId, pageable);
+    return ResponseBody.ok("Okay", activityLog);
 }
 
-
-ALTER TABLE ViolationRemediationPlan
-DROP COLUMN planId;
-
-ALTER TABLE ViolationRemediationPlan
-ADD planId BIGINT IDENTITY(1,1) PRIMARY KEY;
