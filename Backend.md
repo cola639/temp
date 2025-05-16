@@ -9,3 +9,14 @@
     "    WHERE latest.month = RemediationDetail.month " +
     "      AND latest.week = RemediationDetail.week " +
     ")"
+
+
+/**
+ * 从字符串中提取所有 http(s) 链接
+ * @param {string} text - 包含链接的原始字符串
+ * @returns {string[]} - 提取出的链接数组
+ */
+function extractUrls(text) {
+  if (!text) return [];
+  return text.match(/https?:\/\/[^\s]+/g) || [];
+}
