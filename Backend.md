@@ -1,23 +1,11 @@
-好的！以下是配套的 DTO 方案，用于原生 SQL + 分页查询时，返回自定义字段结构更轻便。
+好的，以下是完整实现：使用 **原生 SQL 查询 `ActivityLog` 表**，**按 `applicationId` 和 `auditLevel IN (1,2)` 条件**，**返回 `ActiveLogsDTO` 列表**，**不分页**。
 
 ---
 
-## ✅ 一、你要的字段（参考表结构）
-
-比如我们只关心这些字段：
-
-* `logId`
-* `auditLevel`
-* `message`
-* `actionDate`
-* `applicationId`
-
----
-
-## ✅ 二、创建 DTO 类
+## ✅ 1. DTO 定义
 
 ```java
-public interface ActivityLogDTO {
+public interface ActiveLogsDTO {
     Long getLogId();
     Integer getAuditLevel();
     String getMessage();
@@ -26,115 +14,88 @@ public interface ActivityLogDTO {
 }
 ```
 
-这是 Spring Data JPA 的 **interface-based projection**：只要方法名和 SQL 列名对上即可，无需写构造函数。
+> 用 interface DTO，Spring 自动映射列名，无需构造函数。
 
 ---
 
-## ✅ 三、Repository 改成 DTO 查询
+## ✅ 2. Repository 方法
 
 ```java
-@Query(
-    value = "SELECT logId, auditLevel, message, actionDate, applicationId " +
-            "FROM ActivityLog " +
-            "WHERE auditLevel IN (1, 2) AND applicationId = :applicationId " +
-            "ORDER BY actionDate DESC",
-    countQuery = "SELECT COUNT(*) FROM ActivityLog " +
-                 "WHERE auditLevel IN (1, 2) AND applicationId = :applicationId",
-    nativeQuery = true
-)
-Page<ActivityLogDTO> findDTOByApplicationIdWithAuditLevels(
-    @Param("applicationId") Long applicationId,
-    Pageable pageable
-);
+@Query(value = "SELECT logId, auditLevel, message, actionDate, applicationId " +
+               "FROM ActivityLog " +
+               "WHERE auditLevel IN (1, 2) AND applicationId = :applicationId " +
+               "ORDER BY actionDate DESC",
+       nativeQuery = true)
+List<ActiveLogsDTO> findDTOByApplicationIdWithAuditLevels(@Param("applicationId") Long applicationId);
 ```
 
 ---
 
-## ✅ 四、Controller 层调用（略）
-
-用 `Page<ActivityLogDTO>` 返回即可，和实体返回方式一致。
-
----
-
-## 小提示：
-
-* DTO 字段要匹配 SQL 返回列名。
-* `actionDate` 是 `datetime2`，建议 DTO 中用 `Instant`、`Timestamp` 或 `LocalDateTime`。
-* 如果你希望用 `@SqlResultSetMapping + @ConstructorResult` 方式做更复杂 DTO，也可以，我可以写一版给你。
-
-要不要？
-
-
-你想用 **原生 SQL + 分页 + applicationId 筛选 + auditLevel IN (1, 2)** 来查 `ActivityLog` 表，可以按以下步骤实现：
-
----
-
-### ✅ 第一步：Repository 方法定义
-
-使用 `nativeQuery = true` 和分页参数：
+## ✅ 3. Service 实现
 
 ```java
-@Query(
-    value = "SELECT * FROM ActivityLog " +
-            "WHERE auditLevel IN (1, 2) AND applicationId = :applicationId " +
-            "ORDER BY actionDate DESC",
-    countQuery = "SELECT COUNT(*) FROM ActivityLog " +
-                 "WHERE auditLevel IN (1, 2) AND applicationId = :applicationId",
-    nativeQuery = true
-)
-Page<ActivityLog> findByApplicationIdWithAuditLevels(
-    @Param("applicationId") Long applicationId,
-    Pageable pageable
-);
-```
+@Service
+public class LogService {
+    @Autowired
+    private ActivityLogRepository activityLogRepository;
 
----
-
-### ✅ 第二步：Service 层调用
-
-```java
-public Page<ActivityLog> findApplicationLogs(Long applicationId, int page, int size) {
-    Pageable pageable = PageRequest.of(page, size);
-    return activityLogRepository.findByApplicationIdWithAuditLevels(applicationId, pageable);
+    public List<ActiveLogsDTO> getActiveLogs(Long applicationId) {
+        return activityLogRepository.findDTOByApplicationIdWithAuditLevels(applicationId);
+    }
 }
 ```
 
 ---
 
-### ✅ 第三步：Controller 层
+## ✅ 4. Controller 接口
 
 ```java
-@GetMapping("/getActiveLog")
-public ResponseEntity<ResponseBody> getActiveLog(@RequestParam Long applicationId,
-                                                 @RequestParam(defaultValue = "0") int page,
-                                                 @RequestParam(defaultValue = "10") int size) {
-    Page<ActivityLog> logs = logService.findApplicationLogs(applicationId, page, size);
-    return ResponseBody.ok("Fetch successful", logs);
+@RestController
+@RequestMapping("/logs")
+public class LogController {
+    @Autowired
+    private LogService logService;
+
+    @GetMapping("/getActiveLog")
+    public ResponseEntity<ResponseBody> getActiveLog(@RequestParam Long applicationId) {
+        List<ActiveLogsDTO> logs = logService.getActiveLogs(applicationId);
+        return ResponseBody.ok("Fetch successful", logs);
+    }
 }
 ```
 
 ---
 
-### ✅ 最后别忘了导入分页类：
+## ✅ 5. 补充说明
+
+### 确保你有这些 import：
 
 ```java
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import java.time.Instant;
 ```
 
 ---
 
-### 小结：
+### ResponseBody 示例类（如果你还没有）：
 
-| 功能        | 已支持                                           |
-| --------- | --------------------------------------------- |
-| 原生 SQL 查询 | ✅ `@Query(nativeQuery = true)`                |
-| 多条件筛选     | ✅ `auditLevel IN (1,2) AND applicationId = ?` |
-| 分页        | ✅ `Pageable` + `countQuery`                   |
-| 排序        | ✅ `ORDER BY actionDate DESC`                  |
+```java
+public class ResponseBody {
+    private String message;
+    private Object data;
+
+    public static ResponseEntity<ResponseBody> ok(String message, Object data) {
+        ResponseBody body = new ResponseBody();
+        body.message = message;
+        body.data = data;
+        return ResponseEntity.ok(body);
+    }
+}
+```
 
 ---
 
-如果你希望返回自定义字段（比如只查 `message`, `actionDate`），也可以用 `interface projection`。需要我也配吗？
-
+以上就是完整无分页的原生查询 + DTO 返回。
+需要我把 DTO 改成 class（非 interface）+ 构造函数方式也可以告诉我。
