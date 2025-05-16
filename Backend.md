@@ -141,3 +141,11 @@ List<HostGroupDTO> finalList = transform(inputList);
 ---
 
 如果你还希望统计每组 violation 数量、按 dueDate 排序等，也可以继续扩展。是否需要加？我可以继续补上。
+
+Optional.ofNullable(hostViolationStatus).ifPresent(status -> {
+    item.setRemediationStatus(status.getRemediationStatus());
+    item.setRemediationDate(status.getRemediationDate());
+});
+
+
+
