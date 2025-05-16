@@ -99,3 +99,18 @@ public class ResponseBody {
 
 以上就是完整无分页的原生查询 + DTO 返回。
 需要我把 DTO 改成 class（非 interface）+ 构造函数方式也可以告诉我。
+
+SELECT 
+    logId,
+    auditLevel,
+    message,
+    actionDate,
+    applicationId
+FROM 
+    ActivityLog
+WHERE 
+    auditLevel IN (1, 2)
+    AND applicationId = 123456  -- 👉 请替换为你要查询的实际 applicationId
+ORDER BY 
+    actionDate DESC;
+
