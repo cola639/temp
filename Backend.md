@@ -114,3 +114,21 @@ WHERE
 ORDER BY 
     actionDate DESC;
 
+public List<ActiveLogsDTO> findApplicationLogs() {
+    List<Object[]> results = appInstanceRepository.findRawLogs();
+    return results.stream().map(r -> new ActiveLogsDTO(
+        ((BigInteger) r[0]).longValue(), // id
+        (String) r[1],                   // module
+        (String) r[2],                   // category
+        (Integer) r[3],                  // auditLevel
+        (String) r[4],                   // message
+        ((Timestamp) r[5]).toInstant(),  // actionDate
+        (String) r[6],                   // operatorStaffId
+        (String) r[7],                   // operatorName
+        ((BigInteger) r[8]).longValue(), // moduleId
+        ((BigInteger) r[9]).longValue(), // applicationId
+        ((BigInteger) r[10]).longValue() // serviceId
+    )).collect(Collectors.toList());
+}
+
+
