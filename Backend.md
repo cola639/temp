@@ -1,56 +1,66 @@
-你可以使用 `dayjs` 搭配 `utc` 和 `timezone` 插件来把时间从 ISO 格式 `"2025-04-10T11:42:24"` 转换成 `"10-Apr-2025 19:42 HKT"` 格式。
+@Query(value =
+        "WITH lastestReport AS ( " +
+        "    SELECT TOP 1 month, week " +
+        "    FROM dbo.RemediationDetail " +
+        "    ORDER BY month DESC, week DESC " +
+        "), " +
 
----
+        "AppNameServName AS ( " +
+        "    SELECT DISTINCT CAST(applicationId AS BIGINT) AS applicationId, " +
+        "           applicationName, itServiceId, itService " +
+        "    FROM dbo.ItAppServiceHost " +
+        "    WHERE CAST(itsoStaffId AS VARCHAR) = :staffId " +
+        "       OR itsoDelegateStaffId = :staffId " +
+        "), " +
 
-### ✅ 步骤一：安装依赖
+        "violations AS ( " +
+        "    SELECT " +
+        "        detail.applicationId, " +
+        "        detail.itServiceId, " +
+        "        CAST(detail.isCritical AS INT) AS itacCritical, " +
+        "        1 AS violations, " +
+        "        IIF(dueDate < GETDATE(), 1, 0) AS overdue, " +
+        "        IIF( " +
+        "            (exceptions IS NOT NULL AND exceptions = 'Exception') " +
+        "            OR (comments IS NOT NULL AND comments = 'Third party vendor dependency'), " +
+        "            1, 0 " +
+        "        ) AS exception, " +
+        "        CAST(detail.assetCategory AS INT) AS assetCategory, " +
+        "        CAST(detail.ibs AS INT) AS ibs, " +
+        "        CAST(detail.criticalAsset AS INT) AS criticalAsset " +
+        "    FROM dbo.RemediationDetail detail " +
+        "    INNER JOIN lastestReport " +
+        "        ON detail.month = lastestReport.month AND detail.week = lastestReport.week " +
+        "    WHERE detail.applicationId IN ( " +
+        "        SELECT CAST(applicationId AS BIGINT) " +
+        "        FROM dbo.ItAppServiceHost " +
+        "        WHERE CAST(itsoStaffId AS VARCHAR) = :staffId " +
+        "            OR itsoDelegateStaffId = :staffId " +
+        "    ) " +
+        "), " +
 
-如果你用的是 Node.js 或前端项目：
+        "stat AS ( " +
+        "    SELECT applicationId, " +
+        "           itServiceId, " +
+        "           MAX(itacCritical) AS itacCritical, " +
+        "           SUM(violations) AS violations, " +
+        "           SUM(overdue) AS overdue, " +
+        "           SUM(exception) AS exceptions, " +
+        "           MAX(assetCategory) AS assetCategory, " +
+        "           MAX(ibs) AS ibs, " +
+        "           MAX(criticalAsset) AS criticalAsset " +
+        "    FROM violations " +
+        "    GROUP BY applicationId, itServiceId " +
+        ") " +
 
-```bash
-npm install dayjs
-npm install dayjs-plugin-utc
-npm install dayjs-plugin-timezone
-```
-
-或者全装（推荐）：
-
-```bash
-npm install dayjs dayjs-plugin-utc dayjs-plugin-timezone
-```
-
----
-
-### ✅ 步骤二：JS 代码
-
-```javascript
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-function formatToHKT(isoString) {
-  return dayjs(isoString)
-    .tz('Asia/Hong_Kong')
-    .format('DD-MMM-YYYY HH:mm') + ' HKT';
-}
-
-// 示例
-const isoTime = "2025-04-10T11:42:24";
-console.log(formatToHKT(isoTime));
-// 输出：10-Apr-2025 19:42 HKT
-```
-
----
-
-### 🧠 补充说明
-
-* `tz('Asia/Hong_Kong')` 会自动把时间转换到香港时区（UTC+8）。
-* `.format('DD-MMM-YYYY HH:mm')` 控制输出样式，例如：
-
-  * `10-Apr-2025 19:42`
-
----
-
-需要我帮你转换一个数组/列表中的所有时间字符串吗？可以一起写成批处理函数。
+        "SELECT u.applicationName, " +
+        "       u.itService, " +
+        "       u.applicationId, " +
+        "       u.itServiceId, " +
+        "       s.violations, s.overdue, s.exceptions, s.itacCritical, " +
+        "       s.assetCategory, s.ibs, s.criticalAsset " +
+        "FROM stat s " +
+        "INNER JOIN AppNameServName u " +
+        "    ON s.applicationId = u.applicationId AND s.itServiceId = u.itServiceId",
+        nativeQuery = true)
+List<AppInstanceDto> getAppInstance(@Param("staffId") String staffId);
