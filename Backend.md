@@ -1,5 +1,12 @@
-    @Query("SELECT log FROM ActivityLog log " +
-           "WHERE log.auditLevel IN (1, 2) " +
-           "AND log.applicationId = :applicationId " +
-           "ORDER BY log.actionDate DESC")
-    List<ActivityLog> findActiveLogs(@Param("applicationId") Long applicationId);
+@Repository
+public interface ViolationRepository extends JpaRepository<ViolationRemediationPlan, Long> {
+
+    @Query(value = "SELECT * FROM dbo.ViolationRemediationPlan " +
+                   "WHERE checkId = :checkId " +
+                   "AND checkName = :checkName " +
+                   "AND hostname = :hostname",
+           nativeQuery = true)
+    ViolationRemediationPlan findHostViolation(@Param("checkId") String checkId,
+                                               @Param("checkName") String checkName,
+                                               @Param("hostname") String hostname);
+}
