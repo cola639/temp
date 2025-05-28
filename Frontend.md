@@ -20,3 +20,24 @@ yAxis: {
     align: "right"
   }
 }
+
+
+tooltip: {
+  trigger: "axis",
+  axisPointer: {
+    type: "shadow"
+  },
+  formatter: (params) => {
+    return params.map(p => {
+      const value = p.value >= 1000 ? (p.value / 1000).toFixed(1) + "K" : p.value;
+      return `${p.seriesName}: ${value}`;
+    }).join("<br/>");
+  },
+  backgroundColor: "#ffffff",
+  borderColor: "#ffffff",
+  textStyle: {
+    color: "#000"
+  },
+  extraCssText: "box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 6px;"
+}
+
