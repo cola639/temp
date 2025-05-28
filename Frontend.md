@@ -1,212 +1,61 @@
-const iSeriesNcColumns = [
-  {
-    title: 'Item',
-    dataIndex: 'item',
-    key: 'item',
-    width: 100,
+const option = {
+  title: {
+    show: false,
   },
-  {
-    title: 'Risk Rating',
-    dataIndex: 'riskRating',
-    key: 'riskRating',
-    width: 120,
+  tooltip: {
+    trigger: "item",
+    formatter: "{b}: {d}%"
   },
-  {
-    title: 'Network',
-    dataIndex: 'network',
-    key: 'network',
-    width: 120,
+  legend: {
+    show: false
   },
-  {
-    title: 'Check ID (Item Key)',
-    dataIndex: 'checkId',
-    key: 'checkId',
-    width: 160,
-  },
-  {
-    title: 'Value',
-    dataIndex: 'value',
-    key: 'value',
-    width: 220,
-  },
-  {
-    title: 'Enterprise System Name',
-    dataIndex: 'enterpriseSystemName',
-    key: 'enterpriseSystemName',
-    width: 200,
-  },
-  {
-    title: 'System Vzn',
-    dataIndex: 'systemVzn',
-    key: 'systemVzn',
-    width: 120,
-  },
-  {
-    title: 'Labeled Risk Rating',
-    dataIndex: 'labeledRiskRating',
-    key: 'labeledRiskRating',
-    width: 160,
-  }
-];
-
-const mainframeNcColumns = [
-  {
-    title: 'Check ID (STG ID)',
-    dataIndex: 'checkId',
-    key: 'checkId',
-    width: 160,
-  },
-  {
-    title: 'Network',
-    dataIndex: 'network',
-    key: 'network',
-    width: 120,
-  },
-  {
-    title: 'RiskRating',
-    dataIndex: 'riskRating',
-    key: 'riskRating',
-    width: 120,
-  },
-  {
-    title: 'Check Status',
-    dataIndex: 'checkStatus',
-    key: 'checkStatus',
-    width: 140,
-  },
-  {
-    title: 'Sys Name',
-    dataIndex: 'sysName',
-    key: 'sysName',
-    width: 160,
-  },
-  {
-    title: 'SMF ID',
-    dataIndex: 'smfId',
-    key: 'smfId',
-    width: 100,
-  },
-  {
-    title: 'Environment',
-    dataIndex: 'environment',
-    key: 'environment',
-    width: 130,
-  }
-];
-
-
-const ssdNcColumns = [
-  {
-    title: 'Host Name',
-    dataIndex: 'hostName',
-    key: 'hostName',
-    width: 180,
-    ellipsis: true,
-  },
-  {
-    title: 'Risk Rating',
-    dataIndex: 'riskRating',
-    key: 'riskRating',
-    width: 120,
-    ellipsis: true,
-  },
-  {
-    title: 'Network',
-    dataIndex: 'network',
-    key: 'network',
-    width: 100,
-    ellipsis: true,
-  },
-  {
-    title: 'Check Name',
-    dataIndex: 'checkName',
-    key: 'checkName',
-    width: 600,
-    ellipsis: true,
-  },
-];
-
-const vmwareNcColumns = [
-  {
-    title: 'Host Name',
-    dataIndex: 'hostName',
-    key: 'hostName',
-    width: 260,
-    ellipsis: true,
-  },
-  {
-    title: 'Risk Rating',
-    dataIndex: 'riskRating',
-    key: 'riskRating',
-    width: 120,
-    ellipsis: true,
-  },
-  {
-    title: 'Network',
-    dataIndex: 'network',
-    key: 'network',
-    width: 100,
-    ellipsis: true,
-  },
-  {
-    title: 'Country',
-    dataIndex: 'country',
-    key: 'country',
-    width: 100,
-    ellipsis: true,
-  },
-  {
-    title: 'Check Name',
-    dataIndex: 'checkName',
-    key: 'checkName',
-    width: 250,
-    ellipsis: true,
-  }
-];
-
-const mobileNcColumns = [
-  {
-    title: 'Check ID (IT Policy Name)',
-    dataIndex: 'checkId',
-    key: 'checkId',
-    width: 220,
-    ellipsis: true,
-  },
-  {
-    title: 'Check Name (IT Policy Rule)',
-    dataIndex: 'checkName',
-    key: 'checkName',
-    width: 300,
-    ellipsis: true,
-  },
-  {
-    title: 'Network',
-    dataIndex: 'network',
-    key: 'network',
-    width: 100,
-    ellipsis: true,
-  },
-  {
-    title: 'Risk Rating',
-    dataIndex: 'riskRating',
-    key: 'riskRating',
-    width: 120,
-    ellipsis: true,
-  },
-  {
-    title: 'Violation Type',
-    dataIndex: 'violationType',
-    key: 'violationType',
-    width: 160,
-    ellipsis: true,
-  },
-  {
-    title: 'OS Family',
-    dataIndex: 'osFamily',
-    key: 'osFamily',
-    width: 130,
-    ellipsis: true,
-  },
-];
-
-
+  series: [
+    {
+      name: "Access From",
+      type: "pie",
+      radius: ["0%", "90%"],
+      center: ["50%", "50%"],
+      data: [
+        {
+          value: 1048,
+          name: "Passed",
+          itemStyle: {
+            color: "#52c41a" // 好看的绿色（Ant Design success）
+          }
+        },
+        {
+          value: 735,
+          name: "Failed",
+          itemStyle: {
+            color: "#f5222d" // 好看的红色（Ant Design error）
+          }
+        },
+        {
+          value: 580,
+          name: "Exception",
+          itemStyle: {
+            color: "#8c8c8c" // 好看的灰色
+          }
+        }
+      ],
+      label: {
+        show: true,
+        position: "outside",
+        formatter: ({ name, percent }) => `${percent.toFixed(2)}% (${name})`,
+        fontSize: 14
+      },
+      labelLine: {
+        show: true,
+        length: 20,
+        length2: 10
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: "rgba(0, 0, 0, 0.5)"
+        }
+      }
+    }
+  ]
+};
