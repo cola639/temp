@@ -1,31 +1,35 @@
-const FilterPanelCheckBox = ({ field, onSearch, confirm, groups = [] }) => {
-  const [selectedValues, setSelectedValues] = useState<string[]>([]);
+const handleChange = (checked, item) => {
+  const isTotal = item.value === "total";
+  const allSubValues = groups.map(g => g.value).filter(v => v !== "total");
 
-  const handleChange = (checked: boolean, value: string) => {
-    let updated: string[];
+  let updated = [...selectedValues];
 
+  if (isTotal) {
     if (checked) {
-      updated = [...selectedValues, value];
+      // ✅ 勾选 total：选中全部（含 total）
+      updated = [...allSubValues, "total"];
     } else {
-      updated = selectedValues.filter((v) => v !== value);
+      // ❌ 取消 total：只取消它自己
+      updated = updated.filter(v => v !== "total");
+    }
+  } else {
+    if (checked) {
+      updated = [...updated, item.value];
+    } else {
+      updated = updated.filter(v => v !== item.value);
     }
 
-    setSelectedValues(updated);
-    onSearch(field, updated); // 🔄 多选传数组
-    confirm?.(); // ✅ 搜索后关闭 dropdown（可选）
-  };
+    const hasAllSubChecked = allSubValues.every(v => updated.includes(v));
 
-  return (
-    <div style={{ padding: 10, width: 200 }}>
-      {groups.map((item) => (
-        <Checkbox
-          key={item.value}
-          checked={selectedValues.includes(item.value)}
-          onChange={(e) => handleChange(e.target.checked, item.value)}
-        >
-          {item.label}
-        </Checkbox>
-      ))}
-    </div>
-  );
+    if (hasAllSubChecked) {
+      if (!updated.includes("total")) {
+        updated.push("total"); // ✅ 子项全选时自动加上 total
+      }
+    } else {
+      updated = updated.filter(v => v !== "total"); // ❌ 子项非全选时取消 total
+    }
+  }
+
+  setSelectedValues(updated);
+  onSearch(field, updated);
 };
