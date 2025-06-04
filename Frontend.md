@@ -1,12 +1,17 @@
 import dayjs from 'dayjs';
 
-function getUniqueFormattedMonths(dueDateList) {
+const generateDueDate = (dueDateList) => {
+  if (!Array.isArray(dueDateList) || dueDateList.length === 0) return [];
+
   const monthSet = new Set();
 
-  dueDateList.forEach(dateStr => {
-    const formatted = dayjs(dateStr).format('MMM-YYYY'); // 例：Jul-2025
-    monthSet.add(formatted);
+  dueDateList.forEach((dateStr) => {
+    const formatted = dayjs(dateStr).format('MMM-YYYY');
+    monthSet.add(formatted); // 去重只保留字符串
   });
 
-  return Array.from(monthSet);
-}
+  return Array.from(monthSet).map((month) => ({
+    label: month,
+    value: month,
+  }));
+};
