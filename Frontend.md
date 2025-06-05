@@ -1,7 +1,20 @@
-| 名称             | Hex 色值    | RGB 示例              | 说明                  |
-| -------------- | --------- | ------------------- | ------------------- |
-| **Blue**       | `#1890ff` | `rgb(24, 144, 255)` | Ant Design 默认主蓝色，偏亮 |
-| **Dark Blue**  | `#1a3d7c` | `rgb(26, 61, 124)`  | 稍暗的蓝色，沉稳有质感         |
-| **Navy**       | `#001f3f` | `rgb(0, 31, 63)`    | 非常深的蓝，接近“海军蓝”       |
-| **Royal Blue** | `#4169e1` | `rgb(65, 105, 225)` | 略亮、有质感              |
-| **Slate Blue** | `#2a4e9a` | `rgb(42, 78, 154)`  | 典型 UI 中的“暗蓝”色       |
+import React, { useState } from 'react';
+import { Table } from 'antd';
+
+const MyTable = ({ dataSource, columns }) => {
+  const [selectedRowKey, setSelectedRowKey] = useState(null);
+
+  return (
+    <Table
+      dataSource={dataSource}
+      columns={columns}
+      rowClassName={(record) =>
+        record.key === selectedRowKey ? 'highlight-row' : ''
+      }
+      onRow={(record) => ({
+        onClick: () => setSelectedRowKey(record.key),
+      })}
+      rowKey="key" // 确保每行都有唯一 key
+    />
+  );
+};
