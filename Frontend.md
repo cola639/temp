@@ -1,25 +1,23 @@
- .abs-wrapper {
-        position: relative;
-        height: 60px;
-        background: #f0f2f5;
-        font-family: sans-serif;
-      }
+const sessionStore = {
+  set(key, obj) {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(obj));
+    } catch (e) {
+      console.error('❌ sessionStorage set error:', e);
+    }
+  },
 
-      .center {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 16px;
-        font-weight: bold;
-        color: #333;
-      }
+  get(key) {
+    try {
+      const value = sessionStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
+    } catch (e) {
+      console.error('❌ sessionStorage get error:', e);
+      return null;
+    }
+  },
 
-      .right {
-        position: absolute;
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #1a3d7c;
-        font-size: 14px;
-      }
+  remove(key) {
+    sessionStorage.removeItem(key);
+  }
+};
