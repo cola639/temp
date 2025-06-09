@@ -1,23 +1,22 @@
-const sessionStore = {
-  set(key, obj) {
-    try {
-      sessionStorage.setItem(key, JSON.stringify(obj));
-    } catch (e) {
-      console.error('❌ sessionStorage set error:', e);
-    }
-  },
+useEffect(() => {
+  const LINK = ['linkedId', 'linkConfigurationName'];
+  const UN_LINK = ['unlinkedId', 'unlinkConfigurationName'];
 
-  get(key) {
-    try {
-      const value = sessionStorage.getItem(key);
-      return value ? JSON.parse(value) : null;
-    } catch (e) {
-      console.error('❌ sessionStorage get error:', e);
-      return null;
-    }
-  },
+  const changedKeys = Object.keys(filterValues).filter((key) => {
+    const prevVal = preFilterValues.current?.[key];
+    const newVal = filterValues[key];
+    return prevVal === undefined || prevVal !== newVal;
+  });
 
-  remove(key) {
-    sessionStorage.removeItem(key);
-  }
-};
+  changedKeys.forEach((key) => {
+    if (LINK.includes(key)) {
+      console.log(`🔗 ${key} is a LINK field`);
+    } else if (UN_LINK.includes(key)) {
+      console.log(`❌ ${key} is an UN_LINK field`);
+    } else {
+      console.log(`❓ ${key} changed but unknown category`);
+    }
+  });
+
+  preFilterValues.current = filterValues;
+}, [filterValues]);
