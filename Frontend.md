@@ -1,84 +1,62 @@
-import React, { useRef, useEffect } from "react";
-import * as echarts from "echarts";
-
-// mock 数据
-const mockData = [
-  { Month: "2024-01", Country: "Germany", Violation: 20, Remediation: 10 },
-  { Month: "2024-02", Country: "Germany", Violation: 25, Remediation: 15 },
-  { Month: "2024-03", Country: "Germany", Violation: 18, Remediation: 13 },
-  { Month: "2024-01", Country: "France", Violation: 15, Remediation: 8 },
-  { Month: "2024-02", Country: "France", Violation: 22, Remediation: 14 },
-  { Month: "2024-03", Country: "France", Violation: 17, Remediation: 11 }
-];
+const _rawData_month = {
+  type: "Month",
+  title: ["Violations", "Remediation Plan"],
+  dateList: ["February", "March", "April", "May", "June", "July"],
+  violationList: [1000, 1300, 1400, 1300, 1200, 900],
+  remediationPlanList: [220, 182, 191, 234, 290, 330],
+};
 
 function getOption(data) {
-  const countries = Array.from(new Set(data.map(d => d.Country)));
-  const months = Array.from(new Set(data.map(d => d.Month))).sort();
-
   return {
-    title: {
-      text: "Violation and Remediation"
-    },
+    title: { text: data.type },
     tooltip: {
-      trigger: "axis"
+      show: true,
+      trigger: 'axis',
+      formatter: function(params) {
+        const sorted = [...params].sort((a, b) => {
+          if (a.seriesName === 'Violations') return -1;
+          if (b.seriesName === 'Violations') return 1;
+          return 0;
+        });
+        return `${sorted[0].axisValue}<br/>` + sorted.map(item =>
+          `${item.marker} ${item.seriesName}: <b>${item.value}</b>`
+        ).join('<br/>');
+      }
     },
     legend: {
-      data: countries.flatMap(c => [`${c} Violation`, `${c} Remediation`])
+      data: ['Violations', 'Remediation Plan']
+    },
+    grid: {
+      left: "3%",
+      right: "4%",
+      bottom: "3%",
+      containLabel: true,
     },
     xAxis: {
       type: "category",
-      name: "Month",
-      data: months
+      boundaryGap: false,
+      data: data.dateList,
     },
     yAxis: {
-      name: "Count"
+      type: "value",
+      minInterval: 1,
     },
-    series: countries.flatMap(country => [
+    series: [
       {
-        name: `${country} Violation`,
+        name: "Violations",
         type: "line",
-        showSymbol: false,
-        data: months.map(
-          m =>
-            data.find(d => d.Country === country && d.Month === m)?.Violation ?? null
-        )
+        stack: "Total",
+        data: data.violationList,
+        // 可选: 颜色
+        // lineStyle: { color: "#4f6ef7" }
       },
       {
-        name: `${country} Remediation`,
+        name: "Remediation Plan",
         type: "line",
-        showSymbol: false,
-        data: months.map(
-          m =>
-            data.find(d => d.Country === country && d.Month === m)?.Remediation ?? null
-        )
-      }
-    ])
+        stack: "Total",
+        data: data.remediationPlanList,
+        // lineStyle: { color: "#5dc796" }
+      },
+    ],
   };
-}
-
-export default function MyChart() {
-  const chartRef = useRef(null);
-
-  useEffect(() => {
-    let chartInstance = null;
-    if (chartRef.current) {
-      chartInstance = echarts.init(chartRef.current);
-      chartInstance.setOption(getOption(mockData));
-      // 可选：窗口自适应
-      const resizeFn = () => chartInstance && chartInstance.resize();
-      window.addEventListener('resize', resizeFn);
-      // 清理
-      return () => {
-        window.removeEventListener('resize', resizeFn);
-        chartInstance && chartInstance.dispose();
-      };
-    }
-  }, []);
-
-  return (
-    <div
-      ref={chartRef}
-      style={{ width: "100%", height: 400, minWidth: 600 }}
-    />
-  );
 }
