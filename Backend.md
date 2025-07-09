@@ -3,8 +3,10 @@ import java.util.Random;
 
 public class TeamsKeepAlive {
     public static void main(String[] args) throws Exception {
+        // 后台循环自动保持 Teams 在线
         Robot robot = new Robot();
         Random rand = new Random();
+        System.out.println("Teams 保持在线程序已启动，按 Ctrl+C 退出。");
         while (true) {
             // 获取当前鼠标位置
             PointerInfo pointerInfo = MouseInfo.getPointerInfo();
@@ -17,9 +19,8 @@ public class TeamsKeepAlive {
             int dy = rand.nextBoolean() ? 1 : -1;
             robot.mouseMove(x + dx, y + dy);
 
-            // 可选：模拟轻点鼠标（不建议频繁点击，否则会干扰操作）
-            // robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            // robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            // 控制台输出提示
+            System.out.printf("鼠标微动到 (%d, %d)%n", x + dx, y + dy);
 
             // 每1分钟动一次
             Thread.sleep(60_000);
