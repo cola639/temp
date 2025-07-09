@@ -94,3 +94,43 @@ public class ExemptedViolationService {
         }
     }
 }
+
+
+
+csvReader.forEach(record -> {
+    // 下标防御性处理
+    String id = (record.length > idIndex && idIndex >= 0) ? record[idIndex] : "";
+    String platform = (record.length > platformIndex && platformIndex >= 0) ? record[platformIndex] : "";
+    String hostname = (record.length > hostnameIndex && hostnameIndex >= 0) ? record[hostnameIndex] : "";
+    String checkId = (record.length > checkIdIndex && checkIdIndex >= 0) ? record[checkIdIndex] : "";
+    String checkName = (record.length > checkNameIndex && checkNameIndex >= 0) ? record[checkNameIndex] : "";
+
+    // 必填字段校验
+    if (id.isEmpty() || platform.isEmpty() || hostname.isEmpty()) {
+        log.warn("Skip row due to missing key field: {}", Arrays.toString(record));
+        return; // 跳过本行
+    }
+
+    ExemptedViolation ev = ExemptedViolation.builder()
+            .id(id.trim())
+            .platform(platform.trim())
+            .hostname(hostname.trim())
+            .checkId(checkId == null ? "" : checkId.trim())
+            .checkName(checkName == null ? "" : checkName.trim())
+            .createdDate(Instant.now())
+            .build();
+
+    batchList.add(ev);
+
+    if (batchList.size() >= 1000) {
+        exemptedViolationRepository.saveAll(batchList);
+        log.info("Batch inserted 1000 records.");
+        batchList.clear();
+    }
+});
+
+// 最后一批
+if (!batchList.isEmpty()) {
+    exemptedViolationRepository.saveAll(batchList);
+    log.info("Batch inserted last {} records.", batchList.size());
+}
