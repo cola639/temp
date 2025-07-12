@@ -157,5 +157,25 @@ WHERE month = :month
   AND falsePositive = 0
   AND testImpact IN ('High', 'Medium');
 
-  
+
+
+-- 参数说明：
+-- :reportedDate  日期字符串，例如 '2024-07-11'
+-- :month         整数，格式为 yyyyMM，例如 202407
+
+SELECT 
+    thr.network,
+    rating.risk AS riskRating,
+    fail.netbiosName AS hostName,
+    fail.settingName,
+    DATEDIFF(DAY, lastComplianceMessageTime, :reportedDate) AS overdueAge
+FROM dbo.SsdFailedCheck fail
+    INNER JOIN dbo.SsdCheckRating rating ON fail.settingName = rating.settingName
+    INNER JOIN dbo.SlaThresholds thr ON thr.risk = rating.risk
+WHERE rating.risk IN ('Medium', 'High')
+    AND thr.network = 'DRN'
+    AND DATEDIFF(DAY, lastComplianceMessageTime, :reportedDate) > thr.sla
+    AND fail.month = :month;
+
+
 
