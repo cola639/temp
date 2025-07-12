@@ -147,6 +147,15 @@ WHERE rating.risk IN ('Medium', 'High')
 ;
 
 
+SELECT *
+FROM MainFrameAgg
+WHERE month = :month
+  AND zeroCheckTrap IN ('Findings')
+  AND environment IN ('Prod', 'Vault')
+  AND sbm = 'SBM'
+  AND greenLighted = 1
+  AND falsePositive = 0
+  AND testImpact IN ('High', 'Medium');
 
   
 
