@@ -44,31 +44,48 @@ function validateForm(form, rules) {
 export default function MyForm() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
-  const [submitted, setSubmitted] = useState(false); // 控制高亮与错误提示
+  // 新增一份“错误提示是否显示”状态
+  const [errorVisible, setErrorVisible] = useState({
+    username: false,
+    email: false,
+    age: false,
+  });
 
-  // 输入时只更新表单，不高亮
+  // 输入时：如果高亮过，清除该项的错误和高亮
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-    // 可选：输入时自动清除该字段的错误提示
-    if (errors[name]) {
+
+    if (errorVisible[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
+      setErrorVisible(prev => ({ ...prev, [name]: false }));
     }
   };
 
-  // 提交时校验
+  // 通用表单提交，全部高亮
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = validateForm(form, rules);
+
+    // 有错误的字段都显示高亮
+    const newErrorVisible = {};
+    Object.keys(form).forEach(key => {
+      newErrorVisible[key] = !!newErrors[key];
+    });
+
     setErrors(newErrors);
-    setSubmitted(true); // 标记已经提交，显示错误提示
+    setErrorVisible(newErrorVisible);
 
     if (Object.keys(newErrors).length === 0) {
-      alert('提交成功: ' + JSON.stringify(form));
-      // 可选: 重置
-      // setForm(initialForm);
-      // setSubmitted(false);
+      alert('提交成功');
     }
+  };
+
+  // 只高亮指定字段，比如某些业务场景只想显示 email 错误
+  const highlightField = (field) => {
+    const errMsg = validateField(field, form[field], rules);
+    setErrors(prev => ({ ...prev, [field]: errMsg }));
+    setErrorVisible(prev => ({ ...prev, [field]: !!errMsg }));
   };
 
   return (
@@ -85,12 +102,12 @@ export default function MyForm() {
             style={{
               width: '100%',
               padding: 8,
-              border: submitted && errors[key] ? '1px solid red' : '1px solid #ccc',
+              border: errorVisible[key] ? '1px solid red' : '1px solid #ccc',
               outline: 'none',
               borderRadius: 4,
             }}
           />
-          {submitted && errors[key] && (
+          {errorVisible[key] && errors[key] && (
             <div style={{ color: 'red', fontSize: 12, marginTop: 4 }}>
               {errors[key]}
             </div>
@@ -98,6 +115,15 @@ export default function MyForm() {
         </div>
       ))}
       <button type="submit">提交</button>
+
+      {/* 举例：只高亮email字段 */}
+      <button
+        type="button"
+        style={{ marginLeft: 8 }}
+        onClick={() => highlightField('email')}
+      >
+        只高亮email
+      </button>
     </form>
   );
 }
