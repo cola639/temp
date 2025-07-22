@@ -110,3 +110,7 @@ public void fillViolationRemediationPlan(File file) throws Exception {
 通过一次性根据 `hostname` 查询所有需要的 `gbgf` 值，并将查询结果缓存，我们避免了在每次遍历时进行单独的数据库查询，极大提高了程序的执行效率。同时，结合批量插入，减少了与数据库的交互次数，进一步提升了性能。
 
 如果你有任何问题或需要进一步的优化，请随时告诉我！
+
+@Query("SELECT h.hostname, h.gbgf FROM ItsoAppServiceHost h WHERE h.hostname IN :hostnames LIMIT 1")
+Map<String, String> findGbgfForBatch(@Param("hostnames") Set<String> hostnames);
+
