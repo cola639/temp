@@ -1,28 +1,38 @@
-了解了！如果规则发生变化，只需要根据 `hostname` 来查询并设置 `gbgf` 值，而不再依赖于 `applicationId`，我们可以进一步优化查询方法和代码。
+从你提供的错误信息来看，出现了以下错误：
 
-### **优化方案**：
+```
+unexpected token: LIMIT
+```
 
-* **只根据 `hostname` 查询 `gbgf` 值**，不再使用 `applicationId`。
-* **批量查询 `hostname` 对应的 `gbgf`**：这样可以通过 `hostname` 获取所有对应的 `gbgf` 值，并将其存储在一个 `Map` 中，以便在处理每条记录时直接查找。
+这个错误表明 **`LIMIT`** 关键字不被 JPA 所支持。JPA 查询语言（JPQL）并没有像 SQL 那样直接支持 `LIMIT` 子句。`LIMIT` 是一个特定于 SQL 的关键字，而 JPA 使用 JPQL，它的查询语法与 SQL 略有不同。
 
-### **具体实现：**
+### **原因分析**
 
-#### **1. 修改批量查询方法**
+* **JPQL 不支持 `LIMIT`**：`LIMIT` 是 SQL 语法的一部分，但 JPQL 不直接支持此语法。JPQL 主要用于在实体类上执行查询，不像原生 SQL 那样直接执行数据库特定的操作（如 `LIMIT`）。
 
-只需要根据 `hostname` 来查询 `gbgf`，我们可以调整查询方法：
+* **JPA 使用分页**：如果你想限制查询结果的数量，可以使用 JPA 提供的分页功能。JPA 通过 `Pageable` 和 `Query` 接口提供了分页查询功能来实现限制返回数据的数量。
+
+### **解决方案**
+
+#### **1. 使用分页查询（`Pageable`）**
+
+JPA 提供了一个分页查询的功能，你可以使用 `Pageable` 来限制返回的记录数量。这是更符合 JPA 的方式。
+
+你可以通过 `PageRequest` 来指定分页的大小，并返回一个 `Page` 对象。
 
 ```java
 @Query("SELECT h.hostname, h.gbgf FROM ItsoAppServiceHost h WHERE h.hostname IN :hostnames")
-Map<String, String> findGbgfForBatch(@Param("hostnames") Set<String> hostnames);
+Page<Object[]> findGbgfForBatch(@Param("hostnames") Set<String> hostnames, Pageable pageable);
 ```
 
-* 这里的查询方法通过批量查询所有给定的 `hostname` 对应的 `gbgf` 值，返回一个 `Map`，其中 `hostname` 作为键，`gbgf` 作为值。
+#### **2. 调用分页查询方法**
 
-#### **2. 修改 `fillViolationRemediationPlan` 方法**
-
-在 `fillViolationRemediationPlan` 方法中，只需要获取 `hostname` 并批量查询对应的 `gbgf`，然后将查询结果缓存到 `Map` 中。
+在 Service 层，你可以使用 `PageRequest` 来指定分页参数：
 
 ```java
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 public void fillViolationRemediationPlan(File file) throws Exception {
     List<ViolationRemediationPlan> batchList = new ArrayList<>();
     int batchSize = 1000;
@@ -44,8 +54,18 @@ public void fillViolationRemediationPlan(File file) throws Exception {
             hostnames.add(record.getString(hostnameIndex));
         });
 
-        // 批量查询所有的 gbgf
-        Map<String, String> gbgfMap = itsoAppServiceHostRepository.findGbgfForBatch(hostnames);
+        // 使用分页查询，限制返回结果
+        Pageable pageable = PageRequest.of(0, 1); // 获取第一页，大小为1
+        Page<Object[]> results = itsoAppServiceHostRepository.findGbgfForBatch(hostnames, pageable);
+
+        // 将结果存入 Map，只取第一个
+        Map<String, String> gbgfMap = new HashMap<>();
+        if (!results.isEmpty()) {
+            Object[] firstResult = results.getContent().get(0); // 获取第一个结果
+            String hostname = (String) firstResult[0];
+            String gbgf = (String) firstResult[1];
+            gbgfMap.put(hostname, gbgf);
+        }
 
         // 遍历 CSV 记录并构建 ViolationRemediationPlan 对象
         excelReader.forEach(record -> {
@@ -92,25 +112,28 @@ public void fillViolationRemediationPlan(File file) throws Exception {
 }
 ```
 
-### **3. 解释改动**
+#### **3. 分页查询解释**
 
-* **`findGbgfForBatch` 方法**：我们只根据 `hostname` 批量查询 `gbgf` 值，避免了不必要的 `applicationId` 查询。
-* **`Map<String, String> gbgfMap`**：存储查询结果，`hostname` 为键，`gbgf` 为值。
-* **`batchList`**：在遍历 CSV 文件时，我们将每条记录的 `gbgf` 设置为从 `gbgfMap` 中获取的值。
-* **批量插入**：每 1000 条记录调用一次 `saveAll` 方法进行批量插入。
+* `PageRequest.of(0, 1)`：创建一个分页请求，`0` 表示获取第一页（从 0 开始），`1` 表示每页返回 1 条记录。这种方式可以限制每次查询只返回一个记录（即仅返回一个 `gbgf` 值）。
+* `Page<Object[]> results = itsoAppServiceHostRepository.findGbgfForBatch(hostnames, pageable)`：获取分页查询的结果。如果需要限制返回的记录数，可以调整 `PageRequest.of` 的参数。
 
-### **4. 优势**
+#### **4. 另外的方案：**
 
-* **减少数据库查询次数**：一次性批量查询所有相关的 `hostname` 对应的 `gbgf`，然后将其缓存到内存中，在后续的操作中直接从缓存中读取，避免了每条记录都查询一次数据库。
-* **提高性能**：通过批量查询和批量插入，减少了与数据库的交互次数，提高了程序的效率。
-* **代码简化**：通过缓存查询结果并使用 `Map` 来存储 `hostname` 和 `gbgf` 的关系，简化了代码结构。
+如果不希望使用分页，你可以直接在数据库查询时，使用 `DISTINCT` 和 `GROUP BY` 来确保每个 `hostname` 只有一个唯一的 `gbgf` 值：
+
+```java
+@Query("SELECT DISTINCT h.hostname, h.gbgf FROM ItsoAppServiceHost h WHERE h.hostname IN :hostnames")
+List<Object[]> findGbgfForBatch(@Param("hostnames") Set<String> hostnames);
+```
+
+然后，你可以根据自己的需要从 `List<Object[]>` 中提取第一个记录。
+
+---
 
 ### **总结**
 
-通过一次性根据 `hostname` 查询所有需要的 `gbgf` 值，并将查询结果缓存，我们避免了在每次遍历时进行单独的数据库查询，极大提高了程序的执行效率。同时，结合批量插入，减少了与数据库的交互次数，进一步提升了性能。
+* **JPA 不支持 `LIMIT`**：JPQL 是面向对象的查询语言，不支持 SQL 特有的 `LIMIT` 关键字。
+* **分页查询**：你可以使用 `Pageable` 和 `PageRequest` 来进行分页查询，并限制每次查询的结果数量。
+* **DISTINCT**：在没有分页的情况下，使用 `DISTINCT` 来确保返回唯一的记录。
 
-如果你有任何问题或需要进一步的优化，请随时告诉我！
-
-@Query("SELECT h.hostname, h.gbgf FROM ItsoAppServiceHost h WHERE h.hostname IN :hostnames LIMIT 1")
-Map<String, String> findGbgfForBatch(@Param("hostnames") Set<String> hostnames);
-
+如果有进一步的疑问，或其他具体问题，欢迎随时提问！
