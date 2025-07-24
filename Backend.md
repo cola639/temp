@@ -18,3 +18,14 @@ public static Contact findByStaffId(List<Contact> list, Long staffId) {
         .findFirst()
         .orElse(null);
 }
+
+
+public static Contact safeFindByStaffId(List<Contact> list, String staffId) {
+    if (list == null || staffId == null || staffId.trim().isEmpty()) {
+        return null;
+    }
+    return list.stream()
+            .filter(c -> staffId.equals(c.getStaffId()))
+            .findFirst()
+            .orElse(null);
+}
