@@ -10,3 +10,11 @@ public static Date plusOneYearAndToDate(Date date) {
         cal.add(Calendar.YEAR, 1);
         return cal.getTime();
     }
+
+
+public static Contact findByStaffId(List<Contact> list, Long staffId) {
+    return list.stream()
+        .filter(c -> staffId.equals(c.getStaffId()))
+        .findFirst()
+        .orElse(null);
+}
