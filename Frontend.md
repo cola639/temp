@@ -1,12 +1,11 @@
-function getDurationByMinute(start, end) {
-  const s = dayjs(start);
-  const e = dayjs(end);
+function getDurationFull(start, end) {
+  let s = dayjs(start);
+  let e = dayjs(end);
+  if (e.isBefore(s)) [s, e] = [e, s];
 
-  if (s.format('YYYY-MM-DD HH:mm') === e.format('YYYY-MM-DD HH:mm')) {
-    return "00:00";
-  }
-  const diff = Math.abs(e.diff(s, 'minute'));
-  const h = String(Math.floor(diff / 60)).padStart(2, '0');
-  const m = String(diff % 60).padStart(2, '0');
-  return `${h}:${m}`;
+  const totalSeconds = e.diff(s, 'second');
+  const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+  const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+  const sec = String(totalSeconds % 60).padStart(2, '0');
+  return `${h}:${m}:${sec}`;
 }
