@@ -1,35 +1,12 @@
-import axios from "axios";
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 
-const handleFileChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+dayjs.extend(duration);
 
-  // 1. 校验扩展名
-  const fileName = file.name;
-  const ext = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
-  if (ext !== 'xlsx') {
-    alert("只支持上传 .xlsx 文件！");
-    return;
-  }
-
-  // 2. 生成随机数（比如6位数字）
-  const randomnum = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-
-  // 3. 组装formData
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("randomnum", randomnum);
-
-  try {
-    const res = await axios.post('/api/draft/randomnum', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    // 成功处理
-    alert("上传成功，randomnum：" + randomnum);
-    // 或 setState/res.data 等
-  } catch (err) {
-    alert("上传失败：" + (err?.message || "未知错误"));
-  }
-};
+function getDurationStr(start, end) {
+  const diff = dayjs(end).diff(dayjs(start), 'second');
+  const d = dayjs.duration(diff, 'seconds');
+  const h = String(Math.floor(d.asHours())).padStart(2, '0');
+  const m = String(d.minutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
