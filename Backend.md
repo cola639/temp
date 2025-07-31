@@ -1,31 +1,9 @@
-@Query("SELECT contact FROM Contact contact WHERE contact.staffId IN :staffIds")
-List<Contact> batchFindByStaffIds(@Param("staffIds") List<String> staffIds);
-
-
-
-public static Date plusOneYearAndToDate(Date date) {
-        if (date == null) return null;
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        cal.add(Calendar.YEAR, 1);
-        return cal.getTime();
-    }
-
-
-public static Contact findByStaffId(List<Contact> list, Long staffId) {
-    return list.stream()
-        .filter(c -> staffId.equals(c.getStaffId()))
-        .findFirst()
-        .orElse(null);
-}
-
-
-public static Contact safeFindByStaffId(List<Contact> list, String staffId) {
-    if (list == null || staffId == null || staffId.trim().isEmpty()) {
-        return null;
-    }
-    return list.stream()
-            .filter(c -> staffId.equals(c.getStaffId()))
-            .findFirst()
-            .orElse(null);
-}
+SELECT vm.*, 
+       vm.risk AS riskRating,
+       DATEDIFF(DAY, vm.violationOccurredDate, :reportedDate) AS overdueAge
+FROM VmWare vm
+INNER JOIN dbo.SlaThresholds thr
+    ON vm.risk = thr.risk AND vm.network = thr.network
+WHERE month = :month
+  AND DATEDIFF(DAY, vm.violationOccurredDate, :reportedDate) > thr.sla
+  AND (vm.dueDate < CONVERT(date, GETDATE()) OR vm.dueDate IS NULL)
