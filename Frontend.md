@@ -1,11 +1,8 @@
-function getDurationFull(start, end) {
-  let s = dayjs(start);
-  let e = dayjs(end);
-  if (e.isBefore(s)) [s, e] = [e, s];
-
-  const totalSeconds = e.diff(s, 'second');
-  const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-  const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-  const sec = String(totalSeconds % 60).padStart(2, '0');
-  return `${h}:${m}:${sec}`;
+/* 只居中 placeholder */
+.ant-picker-input > input::placeholder {
+  text-align: center;
+}
+/* 居中所有内容（包含已选日期） */
+.ant-picker-input > input {
+  text-align: center;
 }
