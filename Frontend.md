@@ -1,8 +1,30 @@
-/* 只居中 placeholder */
-.ant-picker-input > input::placeholder {
-  text-align: center;
+const ROLE_MAP = {
+  "platform-owner": [
+    "Platform Owner",
+    "Platform Owner Delegate"
+  ],
+  "cybersecurity-sme": [
+    "Cybersecurity SME",
+    "Cybersecurity SME Delegate"
+  ]
+};
+
+let arr = [];
+
+if (loaderData.admin) {
+  // 管理员看到全部
+  arr = [
+    "Platform Owner",
+    "Platform Owner Delegate",
+    "Cybersecurity SME",
+    "Cybersecurity SME Delegate"
+  ];
+} else {
+  // 根据 role
+  arr = ROLE_MAP[role] || [];
 }
-/* 居中所有内容（包含已选日期） */
-.ant-picker-input > input {
-  text-align: center;
-}
+
+const roleOptions = arr.map(k => ({
+  label: k,
+  value: k
+}));
