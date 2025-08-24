@@ -1,23 +1,35 @@
-1. header 搞回黑色原样，保留新的filter icon
-2. header对齐参考原来的，如果我不在线问Carrick要uat链接参考
-3. 头像圆框黑色字体，水平垂直居中，适配base64图像和多个owners
-4. 把新样式应用到全部Milestone页面，包括Carrick在做的页面，他在线和他讨论
-5. 默认头像圆框随机深色，白色字体
-6. 左边框保持不变
+// utils/colors.js
+function randomInRange(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
+// 生成单个随机 hsl
+function generateHSL(type = "light") {
+  const h = randomInRange(0, 360);   // 色相
+  const s = randomInRange(40, 100);  // 饱和度
+  let l;
 
-function formatValue(value) {
-  if (typeof value !== "string") return "";
-
-  const base64Regex = /^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/;
-
-  if (base64Regex.test(value) && value.length % 4 === 0) {
-    return value; 
+  if (type === "dark") {
+    l = randomInRange(22, 36); // 深色
+  } else {
+    l = randomInRange(42, 75); // 浅色
   }
 
-  const words = value.trim().split(/\s+/);
-
-  const initials = words.map(w => w[0].toUpperCase()).slice(0, 2).join("");
-
-  return initials;
+  return `hsl(${h}, ${s}%, ${l}%)`;
 }
+
+// 生成数组
+export function generateColors(count = 10) {
+  const softColors = Array.from({ length: count }, () => generateHSL("light"));
+  const deepColors = Array.from({ length: count }, () => generateHSL("dark"));
+  return { softColors, deepColors };
+}
+
+  const [softColors, setSoftColors] = useState([]);
+  const [deepColors, setDeepColors] = useState([]);
+
+  useEffect(() => {
+    const { softColors, deepColors } = generateColors(5);
+    setSoftColors(softColors);
+    setDeepColors(deepColors);
+  }, []);
