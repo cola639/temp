@@ -1,24 +1,6 @@
-// ============ 15 组柔和 HSL 颜色 ============
-const softBorders = [
-  'hsl(190 50% 80%)', 
-  'hsl(200 45% 85%)',
-  'hsl(170 40% 80%)', 
-  'hsl(150 35% 82%)', 
-  'hsl(120 30% 85%)', 
-  'hsl( 80 35% 80%)', 
-  'hsl( 60 40% 85%)', 
-  'hsl( 45 50% 85%)', 
-  'hsl( 30 45% 82%)', 
-  'hsl( 25 40% 80%)', 
-  'hsl(330 35% 82%)', 
-  'hsl(340 40% 85%)', 
-  'hsl(270 40% 85%)',
-  'hsl(230 45% 85%)',
-  'hsl(210 40% 80%)'
-];
-
-
-function pickSoftBorder() {
-  return softBorders[Math.floor(Math.random() * softBorders.length)];
-}
-
+1. header 搞回黑色原样，保留新的filter icon
+2. header对齐参考原来的，如果我不在线问Carrick要uat链接参考
+3. 头像圆框黑色字体，水平垂直居中，适配base64图像和多个owners
+4. 把新样式应用到全部Milestone页面，包括Carrick在做的页面，他在线和他讨论
+5. 默认头像圆框随机深色，白色字体
+6. 左边框保持不变
