@@ -1,35 +1,22 @@
-// utils/colors.js
-function randomInRange(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+function formatValue(value) {
+  if (typeof value !== "string") return "";
 
-// 生成单个随机 hsl
-function generateHSL(type = "light") {
-  const h = randomInRange(0, 360);   // 色相
-  const s = randomInRange(40, 100);  // 饱和度
-  let l;
-
-  if (type === "dark") {
-    l = randomInRange(22, 36); // 深色
-  } else {
-    l = randomInRange(42, 75); // 浅色
+  // 判断是否是 base64
+  const base64Regex = /^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/;
+  if (base64Regex.test(value) && value.length % 4 === 0) {
+    return value;
   }
 
-  return `hsl(${h}, ${s}%, ${l}%)`;
+  const words = value.trim().split(/\s+/);
+
+  let initials;
+  if (words.length === 1) {
+    // 单词时取前两个字母
+    initials = words[0].substring(0, 2).toUpperCase();
+  } else {
+    // 多个单词时取前两个单词的首字母
+    initials = words.map(w => w[0].toUpperCase()).slice(0, 2).join("");
+  }
+
+  return initials;
 }
-
-// 生成数组
-export function generateColors(count = 10) {
-  const softColors = Array.from({ length: count }, () => generateHSL("light"));
-  const deepColors = Array.from({ length: count }, () => generateHSL("dark"));
-  return { softColors, deepColors };
-}
-
-  const [softColors, setSoftColors] = useState([]);
-  const [deepColors, setDeepColors] = useState([]);
-
-  useEffect(() => {
-    const { softColors, deepColors } = generateColors(5);
-    setSoftColors(softColors);
-    setDeepColors(deepColors);
-  }, []);
