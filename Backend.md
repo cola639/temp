@@ -45,3 +45,11 @@
                 String.format("Processed %d reports: %d uploaded, %d skipped",
                         reports.size(), uploaded, skipped));
     }
+
+
+    @Query(value = "SELECT reportId, reportName, version, month " +
+               "FROM StaticReport WHERE version = :version AND month IN (:months)",
+       nativeQuery = true)
+List<StaticReport> findNeedUploadReport(@Param("version") Integer version,
+                                        @Param("months") List<Integer> months);
+
