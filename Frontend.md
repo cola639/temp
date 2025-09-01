@@ -1,22 +1,35 @@
-function formatValue(value) {
-  if (typeof value !== "string") return "";
-
-  // 判断是否是 base64
-  const base64Regex = /^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/;
-  if (base64Regex.test(value) && value.length % 4 === 0) {
-    return value;
-  }
-
-  const words = value.trim().split(/\s+/);
-
-  let initials;
-  if (words.length === 1) {
-    // 单词时取前两个字母
-    initials = words[0].substring(0, 2).toUpperCase();
-  } else {
-    // 多个单词时取前两个单词的首字母
-    initials = words.map(w => w[0].toUpperCase()).slice(0, 2).join("");
-  }
-
-  return initials;
-}
+position: function (point, params, dom, rect, size) {
+　　// 鼠标坐标和提示框位置的参考坐标系是：以外层div的左上角那一点为原点，x轴向右，y轴向下
+　　// 提示框位置
+　　var x = 0; // x坐标位置
+　　var y = 0; // y坐标位置
+ 
+　　// 当前鼠标位置
+　　var pointX = point[0];
+　　var pointY = point[1];
+ 
+　　// 外层div大小
+　　// var viewWidth = size.viewSize[0];
+　　// var viewHeight = size.viewSize[1];
+ 
+　　// 提示框大小
+　　var boxWidth = size.contentSize[0];
+　　var boxHeight = size.contentSize[1];
+ 
+　　// boxWidth > pointX 说明鼠标左边放不下提示框
+　　if (boxWidth > pointX) {
+　　　　x = pointX + 10;
+　　} else { // 左边放的下
+　　　　x = pointX - boxWidth-10;
+　　}
+ 
+　　// boxHeight > pointY 说明鼠标上边放不下提示框
+　　if (boxHeight > pointY) {
+　　　　y = 5;
+　　} else { // 上边放得下
+　　　　y = pointY - boxHeight;
+　　}
+ 
+　　return [x, y];
+ 
+},
