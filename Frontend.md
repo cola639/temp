@@ -1,18 +1,9 @@
-import React from 'react';
-import { loadPage } from './loadPage';
-import ErrorBoundary from '../components/ErrorBoundary';
+  useEffect(() => {
+    // 从最后一个匹配路由中取出 element 的 type（即组件）
+    const currentRoute = matches[matches.length - 1];
+    const Component = currentRoute?.route?.element?.type;
 
-export const createRouteProps = (Component, title, props = {}) => {
-  const hasLoader = typeof Component?.loader === 'function';
+    const title = Component?.title;
 
-  const route = {
-    element: <Component {...props} />,
-    errorElement: <ErrorBoundary />,
-  };
-
-  if (hasLoader) {
-    route.loader = loadPage(Component, title);
-  }
-
-  return route;
-};
+    document.title = title ? `CBMT - ${title}` : DEFAULT_TITLE;
+  }, [location, matches]);
