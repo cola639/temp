@@ -1,19 +1,18 @@
-export const loadPage = (Component: any, customTitle?: string) => {
-  const maybeLoader = Component?.loader;
+import React from 'react';
+import { loadPage } from './loadPage';
+import ErrorBoundary from '../components/ErrorBoundary';
 
-  const title = customTitle || Component?.title || '';
+export const createRouteProps = (Component, title, props = {}) => {
+  const hasLoader = typeof Component?.loader === 'function';
 
-  // 没有 loader，返回同步函数（关键点！）
-  if (typeof maybeLoader !== 'function') {
-    return () => {
-      setDocumentTitle(title);
-      return null;
-    };
+  const route = {
+    element: <Component {...props} />,
+    errorElement: <ErrorBoundary />,
+  };
+
+  if (hasLoader) {
+    route.loader = loadPage(Component, title);
   }
 
-  // 有 loader，返回异步函数
-  return async (...args: any[]) => {
-    setDocumentTitle(title);
-    return await maybeLoader(...args);
-  };
+  return route;
 };
