@@ -1,9 +1,29 @@
-  useEffect(() => {
-    // 从最后一个匹配路由中取出 element 的 type（即组件）
-    const currentRoute = matches[matches.length - 1];
-    const Component = currentRoute?.route?.element?.type;
+// utils/withPageTitle.js
+import React, { useEffect } from 'react';
 
-    const title = Component?.title;
+export function withPageTitle(Component, defaultPrefix = 'CBMT') {
+  function Wrapped(props) {
+    useEffect(() => {
+      const title = Component.title || '';
+      document.title = title ? `${defaultPrefix} - ${title}` : defaultPrefix;
+    }, []);
 
-    document.title = title ? `CBMT - ${title}` : DEFAULT_TITLE;
-  }, [location, matches]);
+    return <Component {...props} />;
+  }
+
+  Wrapped.displayName = `WithPageTitle(${Component.displayName || Component.name || 'Component'})`;
+
+  return Wrapped;
+}
+
+
+import { withPageTitle } from '../utils/withPageTitle';
+
+export const createRouteProps = (Component, title, props = {}) => {
+  const Enhanced = withPageTitle(Component);
+
+  return {
+    element: <Enhanced {...props} />,
+    errorElement: <ErrorBoundary />,
+  };
+};
