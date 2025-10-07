@@ -1,14 +1,4 @@
-String reportName = report.getReportName().toLowerCase();
-
-Set<String> groups = new HashSet<>(Arrays.asList("kci", "kpi", "rcmm"));
-String prefix;
-
-if ("violation".equals(reportName)) {
-    prefix = "violation";
-} else if (groups.contains(reportName)) {
-    prefix = reportName;
-} else {
-    prefix = "other"; // just in case
-}
-
-String keyName = String.format("%s/%d", prefix, report.getReportId());
+DATE_FORMAT(
+    STR_TO_DATE(LOWER(TRIM(BOTH '''' FROM SUBSTRING_INDEX(column_name, '-', -1))), '%M %Y'),
+    '%Y%m'
+  ) AS year_month_long
