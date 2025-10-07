@@ -26,3 +26,16 @@ SELECT
     )
   ) AS year_month_int
 FROM your_table;
+
+
+  TO_NUMBER(
+    TO_CHAR(
+      TO_DATE(
+        INITCAP(
+          TRIM('''' FROM SUBSTR(column_name, INSTR(column_name, '-', -1) + 1))
+        ),
+        'Month YYYY'
+      ),
+      'YYYYMM'
+    )
+  ) AS year_month_int
