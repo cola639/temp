@@ -1,29 +1,18 @@
-// utils/withPageTitle.js
-import React, { useEffect } from 'react';
-
-export function withPageTitle(Component, defaultPrefix = 'CBMT') {
-  function Wrapped(props) {
-    useEffect(() => {
-      const title = Component.title || '';
-      document.title = title ? `${defaultPrefix} - ${title}` : defaultPrefix;
-    }, []);
-
-    return <Component {...props} />;
-  }
-
-  Wrapped.displayName = `WithPageTitle(${Component.displayName || Component.name || 'Component'})`;
-
-  return Wrapped;
+{
+  path: "/view/dashboard",
+  element: <Dashboard />,
+  loader: async () => {
+    console.log("Simple loader running");
+    await new Promise(res => setTimeout(res, 500));
+    return { message: "ok" };
+  },
 }
 
 
-import { withPageTitle } from '../utils/withPageTitle';
+import { useLoaderData } from "react-router-dom";
 
-export const createRouteProps = (Component, title, props = {}) => {
-  const Enhanced = withPageTitle(Component);
-
-  return {
-    element: <Enhanced {...props} />,
-    errorElement: <ErrorBoundary />,
-  };
-};
+export default function Dashboard() {
+  const data = useLoaderData();
+  console.log("Dashboard rendered", data);
+  return <div>Dashboard loaded with data: {data.message}</div>;
+}
