@@ -1,34 +1,87 @@
-function formatDashboardData({ pieChart, monthList, monthlyBarChart, weekDateList, weeklyBarChart }) {
-  const pieData = [
-    { value: pieChart.nonCompliance, name: 'Non compliance', itemStyle: { color: colors.red } },
-    { value: pieChart.compliance,    name: 'Compliance',     itemStyle: { color: colors.green } },
-  ];
+import React, { useState } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';   // 主题样式
 
-  const months = monthList.map(i => dayjs(String(i), 'YYYYMM').format('MMM'));
-  const weeks  = weekDateList.map(i => dayjs(String(i), 'YYYYMMDD').format('DDMMM'));
+const QuillEditor = ({ value, onChange, placeholder = '请输入内容…' }) => {
+  // 工具栏配置
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ]
+  };
 
-  // clone to guarantee new refs
-  const monthlyTrends = monthlyBarChart.map(row => [...row]);
-  const weeklyTrends  = weeklyBarChart.map(row => [...row]);
+  // 拦截图片粘贴/上传，转存服务器（示例）
+  const handleImageUpload = () => {
+    const quill = ReactQuill.quill;          // 拿到实例
+    if (!quill) return;
 
-  return { pieData, months, weeks, monthlyTrends, weeklyTrends };
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files[0];
+      const form = new FormData();
+      form.append('file', file);
+
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const url = await res.text();          // 返回图片 URL
+
+      const range = quill.getSelection(true);
+      quill.insertEmbed(range.index, 'image', url); // 插入图片
+      quill.setSelection(range.index + 1);
+    };
+  };
+
+  // 把图片按钮绑定成自定义上传
+  modules.toolbar.handlers = { image: handleImageUpload };
+
+  return (
+    <ReactQuill
+      theme="snow"
+      value={value}
+      onChange={onChange}
+      modules={modules}
+      placeholder={placeholder}
+    />
+  );
+};
+
+export default QuillEditor;
+
+
+
+
+
+
+--------
+
+import React, { useState } from 'react';
+import QuillEditor from '../components/QuillEditor';
+
+export default function Demo() {
+  const [content, setContent] = useState('');
+
+  return (
+    <div style={{ padding: 24 }}>
+      <h2>quill@2.0.3 在 React 中的使用示例</h2>
+      <QuillEditor value={content} onChange={setContent} />
+      <h3>实时 HTML 输出</h3>
+      <pre style={{ background: '#f6f6f6', padding: 12 }}>{content}</pre>
+    </div>
+  );
 }
 
 
-const next = formatDashboardData(/* api result */);
 
-setDashboardData(prev => ({
-  // arrays of objects
-  pieData: next.pieData.map(s => ({ ...s })),          // copy each series object
+------
 
-  // arrays of primitives
-  months: [...next.months],
-  weeks:  [...next.weeks],
-
-  // arrays of arrays
-  monthlyTrends: next.monthlyTrends.map(r => [...r]),
-  weeklyTrends:  next.weeklyTrends.map(r => [...r]),
-
-  // optional: force remount for stubborn chart libs
-  _v: (prev?._v ?? 0) + 1,
-}));
+/* 让编辑区默认更高一点 */
+.ql-editor {
+  min-height: 300px;
+}
