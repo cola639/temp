@@ -1,18 +1,22 @@
-// default check: keep if not null/undefined, not empty string/array, not NaN
+// keep if: not null/undefined, not empty array, not blank string, not NaN
 const isMeaningful = (v) =>
-  v != null && !(Array.isArray(v) && v.length === 0) && !(typeof v === 'string' && v.trim() === '') && !(typeof v === 'number' && Number.isNaN(v));
+  v != null &&
+  !(Array.isArray(v) && v.length === 0) &&
+  !(typeof v === 'string' && v.trim() === '') &&
+  !(typeof v === 'number' && Number.isNaN(v));
 
 /**
- * attachIf(b, ['a', arr], ['e', str], ['f', val, customPredicate?], ...)
+ * Mutates `target` by copying only meaningful fields from `payload`.
+ * Returns the same `target`.
  */
-function attachIf(b, ...entries) {
-  for (const [key, value, when = isMeaningful] of entries) {
-    if (when(value)) b[key] = value;
+function attachOptional(target, payload, check = isMeaningful) {
+  for (const [k, v] of Object.entries(payload)) {
+    if (check(v)) target[k] = v;
   }
-  return b;
+  return target;
 }
 
 // usage
-const b = { c: 1, d: 2 };
-attachIf(b, ['a', []], ['x', [1,2]], ['y', '  '], ['z', 'ok']);
-// -> { c:1, d:2, x:[1,2], z:'ok' }
+const b3 = { c: 1, d: 2 };
+attachOptional(b3, { a: [], x: [1, 2], y: '', z: 'ok', n: null });
+// b3 -> { c: 1, d: 2, x: [1, 2], z: 'ok' }
