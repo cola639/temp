@@ -1,11 +1,18 @@
-function isGreaterPercent(a: string, b: string): boolean {
-  const toNum = (s: string) => {
-    if (typeof s !== 'string') return NaN
-    const n = parseFloat(s.replace(/\s+/g, '').replace('%', ''))
-    return Number.isFinite(n) ? n : NaN
+// default check: keep if not null/undefined, not empty string/array, not NaN
+const isMeaningful = (v) =>
+  v != null && !(Array.isArray(v) && v.length === 0) && !(typeof v === 'string' && v.trim() === '') && !(typeof v === 'number' && Number.isNaN(v));
+
+/**
+ * attachIf(b, ['a', arr], ['e', str], ['f', val, customPredicate?], ...)
+ */
+function attachIf(b, ...entries) {
+  for (const [key, value, when = isMeaningful] of entries) {
+    if (when(value)) b[key] = value;
   }
-  const na = toNum(a)
-  const nb = toNum(b)
-  if (!Number.isFinite(na) || !Number.isFinite(nb)) return false
-  return na > nb
+  return b;
 }
+
+// usage
+const b = { c: 1, d: 2 };
+attachIf(b, ['a', []], ['x', [1,2]], ['y', '  '], ['z', 'ok']);
+// -> { c:1, d:2, x:[1,2], z:'ok' }
