@@ -1,22 +1,48 @@
-// keep if: not null/undefined, not empty array, not blank string, not NaN
-const isMeaningful = (v) =>
-  v != null &&
-  !(Array.isArray(v) && v.length === 0) &&
-  !(typeof v === 'string' && v.trim() === '') &&
-  !(typeof v === 'number' && Number.isNaN(v));
+// Example shape assumed:
+// const gbgfTree = [
+//   {
+//     name: "AMH Technology",
+//     gbgfFunctionList: [
+//       { name: "AMH CMB Tech", gbgfSubFunctionList: ["PayMe", "Pensions HK"] },
+//       { name: "AMH RB & Wealth Tech", gbgfSubFunctionList: ["..."] },
+//     ],
+//   },
+//   // ...
+// ];
+
+const norm = v => String(v ?? "").trim().toLowerCase();
 
 /**
- * Mutates `target` by copying only meaningful fields from `payload`.
- * Returns the same `target`.
+ * Find a name at any depth (0/1/2) and return its path.
+ * - match at level 0  -> { gbgf:[name], gbgfFun:[], gbgfSubFun:[] }
+ * - match at level 1  -> { gbgf:[parent], gbgfFun:[name], gbgfSubFun:[] }
+ * - match at level 2  -> { gbgf:[grandParent], gbgfFun:[parent], gbgfSubFun:[name] }
+ * If not found -> empty arrays.
  */
-function attachOptional(target, payload, check = isMeaningful) {
-  for (const [k, v] of Object.entries(payload)) {
-    if (check(v)) target[k] = v;
-  }
-  return target;
-}
+function getGbgfTree(name, tree = gbgfTree) {
+  const target = norm(name);
 
-// usage
-const b3 = { c: 1, d: 2 };
-attachOptional(b3, { a: [], x: [1, 2], y: '', z: 'ok', n: null });
-// b3 -> { c: 1, d: 2, x: [1, 2], z: 'ok' }
+  for (const p of tree || []) {
+    const pName = p?.name;
+    if (norm(pName) === target) {
+      return { gbgf: [pName], gbgfFun: [], gbgfSubFun: [] };
+    }
+
+    for (const f of p?.gbgfFunctionList || []) {
+      const fName = f?.name;
+      if (norm(fName) === target) {
+        return { gbgf: [pName], gbgfFun: [fName], gbgfSubFun: [] };
+        }
+
+      for (const s of f?.gbgfSubFunctionList || []) {
+        const sName = typeof s === "string" ? s : s?.name;
+        if (norm(sName) === target) {
+          return { gbgf: [pName], gbgfFun: [fName], gbgfSubFun: [sName] };
+        }
+      }
+    }
+  }
+
+  // not found
+  return { gbgf: [], gbgfFun: [], gbgfSubFun: [] };
+}
