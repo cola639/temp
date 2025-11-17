@@ -1,67 +1,85 @@
-// 1) helper: only offset markers when values collide at same x
-function addCollisionOffsets(option, step = 8) {
+// 1) helper: add per-point symbolOffset + labelVisible
+function addCollisionOffsetsAndLabels(option, step = 8) {
   const series = option.series || [];
   if (!series.length) return option;
 
-  // assume all series share same x length
   const nSeries = series.length;
   const nPoints = series[0].data.length;
 
   // matrix[seriesIdx][xIdx] = numeric value
   const matrix = series.map((s) => s.data);
 
-  // offsets[seriesIdx][xIdx] = x-offset in px
+  // offsets[seriesIdx][xIdx] = x-offset (px)
   const offsets = Array.from({ length: nSeries }, () =>
     Array(nPoints).fill(0)
   );
 
+  // label flags: whether this point should show the label
+  const labelFlags = Array.from({ length: nSeries }, () =>
+    Array(nPoints).fill(true) // default: show for non-collisions
+  );
+
   for (let x = 0; x < nPoints; x++) {
-    const valueMap = new Map(); // value -> list of seriesIdx
+    const valueMap = new Map(); // value -> list of series indices
 
-    for (let s = 0; s < nSeries; s++) {
-      const v = matrix[s][x];
-
-      // skip empty/null/'-' points
+    for (let sIdx = 0; sIdx < nSeries; sIdx++) {
+      const v = matrix[sIdx][x];
       if (v == null || v === '-') continue;
 
       const key = String(v);
       if (!valueMap.has(key)) valueMap.set(key, []);
-      valueMap.get(key).push(s);
+      valueMap.get(key).push(sIdx);
     }
 
-    // for each value that appears in 2+ series at this x
+    // process collisions at this x
     for (const [, indices] of valueMap) {
-      if (indices.length <= 1) continue;
+      if (indices.length <= 1) continue; // no collision
 
       const k = indices.length;
-      // symmetric offsets: e.g. k = 3 → [-step, 0, +step]
-      const base = -((k - 1) / 2) * step;
+      const base = -((k - 1) / 2) * step; // symmetric offsets
 
       indices.forEach((sIdx, i) => {
+        // offset markers
         offsets[sIdx][x] = base + i * step;
+
+        // only the FIRST in the group shows label, others hide
+        labelFlags[sIdx][x] = i === 0;
       });
     }
   }
 
-  // rebuild series with per-point symbolOffset only when needed
+  // rebuild series: every point becomes an object with:
+  // { value, symbolOffset, labelVisible }
   option.series = series.map((s, sIdx) => ({
     ...s,
-    // important: no series-level symbolOffset
-    data: s.data.map((v, xIdx) => {
-      const off = offsets[sIdx][xIdx];
-      if (!off) return v; // no collision → keep pure number
-      return {
-        value: v,
-        symbolOffset: [off, 0], // only move horizontally
-      };
-    }),
+    label: {
+      show: true,
+      position: 'top',
+      formatter: (p) => {
+        const data = p.data;
+        const val =
+          data && typeof data === 'object' ? data.value : data;
+        const visible =
+          data && typeof data === 'object'
+            ? data.labelVisible
+            : true;
+        return visible ? val : '';
+      },
+    },
+    data: s.data.map((v, xIdx) => ({
+      value: v,
+      symbolOffset: offsets[sIdx][xIdx]
+        ? [offsets[sIdx][xIdx], 0]
+        : [0, 0],
+      labelVisible: labelFlags[sIdx][xIdx],
+    })),
   }));
 
   return option;
 }
 
-// 2) base option
-const optionBase = {
+// 2) your base option
+let option = {
   title: { text: 'Stacked Line' },
   tooltip: { trigger: 'axis' },
   legend: {
@@ -119,11 +137,10 @@ const optionBase = {
   ],
 };
 
-// 3) apply offsets only where needed
-const option = addCollisionOffsets(optionBase, 8);
+// 3) apply collision logic
+option = addCollisionOffsetsAndLabels(option, 8);
 
-// 4) init echart & setOption
-// make sure you have a <div id="main" style="width:600px;height:400px;"></div>
+// 4) init chart
 const dom = document.getElementById('main');
 const myChart = echarts.init(dom);
 myChart.setOption(option);
