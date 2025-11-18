@@ -5,24 +5,20 @@ function addCollisionOffsetsAndLabels(option, step = 8) {
   const nSeries = series.length;
   const nPoints = series[0].data.length;
 
-  // matrix[seriesIdx][xIdx] = numeric value
   const matrix = series.map((s) => s.data);
 
-  // offsets[seriesIdx][xIdx] = x-offset (px)
   const offsets = Array.from({ length: nSeries }, () =>
     Array(nPoints).fill(0)
   );
-
-  // label flags: whether this point should show the label
   const labelFlags = Array.from({ length: nSeries }, () =>
-    Array(nPoints).fill(true) // default: show for non-collisions
+    Array(nPoints).fill(true)
   );
 
   for (let x = 0; x < nPoints; x++) {
     const isEdge = x === 0 || x === nPoints - 1;
 
-    const valueMap = new Map(); // value -> list of series indices
-    const allIndicesAtX = [];   // for the "all different" case
+    const valueMap = new Map();
+    const allIndicesAtX = [];
 
     for (let sIdx = 0; sIdx < nSeries; sIdx++) {
       const v = matrix[sIdx][x];
@@ -39,7 +35,7 @@ function addCollisionOffsetsAndLabels(option, step = 8) {
 
     let hasCollision = false;
 
-    // 1) handle equal-value groups (collisions)
+    // same-value groups
     for (const [, indices] of valueMap) {
       if (indices.length <= 1) continue;
 
@@ -48,53 +44,55 @@ function addCollisionOffsetsAndLabels(option, step = 8) {
       const base = -((k - 1) / 2) * step;
 
       indices.forEach((sIdx, i) => {
-        // edge x: only dedupe labels, NO offset
         if (!isEdge) {
           offsets[sIdx][x] = base + i * step;
         }
-        // label: only first in group shows
-        labelFlags[sIdx][x] = i === 0;
+        labelFlags[sIdx][x] = i === 0; // only first shows label
       });
     }
 
-    // 2) if not edge, and NO equal-value collisions at this x,
-    //    offset all points according to legend order (series order)
+    // all different → legend-order offset
     if (!isEdge && !hasCollision) {
       const k = allIndicesAtX.length;
       const base = -((k - 1) / 2) * step;
 
       allIndicesAtX.forEach((sIdx, i) => {
         offsets[sIdx][x] = base + i * step;
-        // labels all stay true (different values)
       });
     }
   }
 
-  // rebuild series: every point becomes an object with:
-  // { value, symbolOffset, labelVisible }
   option.series = series.map((s, sIdx) => ({
     ...s,
     label: {
       show: true,
       position: 'top',
+      align: 'center',
+      verticalAlign: 'middle',
       formatter: (p) => {
-        const data = p.data;
+        const d = p.data;
         const val =
-          data && typeof data === 'object' ? data.value : data;
+          d && typeof d === 'object' ? d.value : d;
         const visible =
-          data && typeof data === 'object'
-            ? data.labelVisible
+          d && typeof d === 'object'
+            ? d.labelVisible
             : true;
         return visible ? val : '';
       },
     },
-    data: s.data.map((v, xIdx) => ({
-      value: v,
-      symbolOffset: offsets[sIdx][xIdx]
-        ? [offsets[sIdx][xIdx], 0]
-        : [0, 0],
-      labelVisible: labelFlags[sIdx][xIdx],
-    })),
+    data: s.data.map((v, xIdx) => {
+      const off = offsets[sIdx][xIdx] || 0;
+      return {
+        value: v,
+        // move the point
+        symbolOffset: [off, 0],
+        // keep the label centered vertically at the original x
+        label: {
+          offset: [-off, 0],   // 👈 cancel the symbol's x offset for the text
+        },
+        labelVisible: labelFlags[sIdx][xIdx],
+      };
+    }),
   }));
 
   return option;
