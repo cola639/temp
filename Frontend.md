@@ -1,44 +1,73 @@
-// gbgfBreakdown item example:
-// { gbgf: 'AMH Technology', gbgfFunction: 'AMH CMB Tech', gbgfSubFunction: 'Business Banking' }
+// name normalizer you already have
+// function norm(str) { ... }
 
-function getGbgfTree(name, gbgfBreakdown, type) {
-  const result = { gbgf: [], gbgfFun: [], gbgfSubFun: [] };
+function getGbgfTree(name, tree = gbgfTree) {
+  const target = norm(name);
+  const empty = {
+    businessLv3: [],
+    gbgf: [],
+    gbgfFunction: [],
+    gbgfSubFunction: []
+  };
 
-  if (!Array.isArray(gbgfBreakdown) || !name) {
-    return result;
+  if (!tree || !tree.length) return empty;
+
+  for (const b of tree || []) {
+    const bName = b && b.name;
+
+    // level 1: businessLv3
+    if (norm(bName) === target) {
+      return {
+        businessLv3: [bName],
+        gbgf: [],
+        gbgfFunction: [],
+        gbgfSubFunction: []
+      };
+    }
+
+    // level 2: gbgf under this business
+    for (const g of b?.gbgfList || []) {
+      const gName = g && g.name;
+
+      if (norm(gName) === target) {
+        return {
+          businessLv3: [bName],
+          gbgf: [gName],
+          gbgfFunction: [],
+          gbgfSubFunction: []
+        };
+      }
+
+      // level 3: gbgfFunction under this gbgf
+      for (const f of g?.gbgfFunctionList || []) {
+        const fName = f && f.name;
+
+        if (norm(fName) === target) {
+          return {
+            businessLv3: [bName],
+            gbgf: [gName],
+            gbgfFunction: [fName],
+            gbgfSubFunction: []
+          };
+        }
+
+        // level 4: gbgfSubFunction under this function
+        for (const s of f?.gbgfSubFunctionList || []) {
+          const sName = typeof s === 'string' ? s : s && s.name;
+
+          if (norm(sName) === target) {
+            return {
+              businessLv3: [bName],
+              gbgf: [gName],
+              gbgfFunction: [fName],
+              gbgfSubFunction: [sName]
+            };
+          }
+        }
+      }
+    }
   }
 
-  // find first matched row by type
-  var row = gbgfBreakdown.find(function (item) {
-    if (!item) return false;
-
-    if (type === 'gbgf') {
-      return item.gbgf === name;
-    }
-    if (type === 'gbgfFunction') {
-      return item.gbgfFunction === name;
-    }
-    if (type === 'gbgfSubFunction') {
-      return item.gbgfSubFunction === name;
-    }
-    return false;
-  });
-
-  if (!row) return result;
-
-  if (type === 'gbgf') {
-    // click top level
-    result.gbgf = [row.gbgf];
-  } else if (type === 'gbgfFunction') {
-    // click function level
-    result.gbgf = [row.gbgf];
-    result.gbgfFun = [row.gbgfFunction];
-  } else if (type === 'gbgfSubFunction') {
-    // click sub-function level
-    result.gbgf = [row.gbgf];
-    result.gbgfFun = [row.gbgfFunction];
-    result.gbgfSubFun = [row.gbgfSubFunction];
-  }
-
-  return result;
+  // not found
+  return empty;
 }
