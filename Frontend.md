@@ -185,3 +185,31 @@ const option = {
     },
     series: this.lineData.yData
 }
+
+lineStyle: { // 线条样式
+    color: {
+        colorStops: [{
+            offset: 0, color: '#FA8558',
+        }, {
+            offset: 1, color: '#FAAF58'
+        }],
+    },
+    width: 2, // 线条粗细
+    shadowOffsetY: 12, // 阴影线条的偏移量
+    shadowColor: 'rgba(59, 138, 254, 0.1)'  // 阴影线条的颜色
+},
+areaStyle: { // 区域样式
+    color: {
+        type: 'linear',
+        x: 0,
+        y: 0,
+        x2: 0,
+        y2: 1,
+        colorStops: [{
+            offset: 0, color: 'rgba(250, 157, 88, 0.2)' // 0% 处的颜色
+        }, {
+            offset: 1, color: 'rgba(250, 157, 88, 0.0001)' // 100% 处的颜色
+        }],
+    }
+},
+
