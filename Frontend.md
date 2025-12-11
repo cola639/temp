@@ -1,37 +1,41 @@
-// RhelText.jsx
-import React, { useMemo } from 'react';
+// data: 2D array like [ [1, 8, 6], [2, 3, 5] ]
+export function getMaxNumber(data: number[][], paddingRatio = 0.2): number {
+  let max = -Infinity;
 
-function splitByComma(str, groupCount = 2) {
-  const parts = str.split(',');
-  if (parts.length <= groupCount) return [str];
+  for (const row of data) {
+    for (const value of row) {
+      if (typeof value === 'number' && !Number.isNaN(value) && value > max) {
+        max = value;
+      }
+    }
+  }
 
-  const first =
-    parts
-      .slice(0, groupCount)
-      .join(',')
-      .trimEnd() + ',';
+  // handle empty or non-positive data
+  if (!Number.isFinite(max) || max <= 0) {
+    return 10;
+  }
 
-  const second = parts.slice(groupCount).join(',').trim();
-  return [first, second];
+  const raw = max * (1 + paddingRatio); // max + 20%
+
+  return roundUpForRange(raw);
 }
 
-function RhelText({ value, groupCount = 2, className }) {
-  const [first, second] = useMemo(
-    () => splitByComma(value, groupCount),
-    [value, groupCount]
-  );
+function roundUpForRange(value: number): number {
+  if (value <= 10) {
+    // within 10 → round to 5 or 10
+    return value <= 5 ? 5 : 10;
+  }
 
-  return (
-    <span className={className}>
-      {first}
-      {second && (
-        <>
-          <br />
-          {second}
-        </>
-      )}
-    </span>
-  );
+  if (value <= 100) {
+    // within 100 → round up to next 10
+    return Math.ceil(value / 10) * 10;
+  }
+
+  if (value <= 1000) {
+    // within 1000 → round up to next 100
+    return Math.ceil(value / 100) * 100;
+  }
+
+  // optional: for > 1000, round to next 1000
+  return Math.ceil(value / 1000) * 1000;
 }
-
-export default RhelText;
